@@ -64,13 +64,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       builder: (context, languageProvider, child) {
         return Scaffold(
           body: Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.5, -0.6),
-                radius: 1.2,
-                colors: [Color(0xFF1A1A1A), Color(0xFF000000)],
-              ),
-            ),
+            color: AppTheme.backgroundColor,
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
@@ -78,7 +72,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white70),
+                      icon: const Icon(Icons.arrow_back_ios_new, color: AppTheme.textColor),
                       onPressed: () => Navigator.pop(context),
                     ),
                     const SizedBox(height: 40),
@@ -97,17 +91,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                         fontSize: 40,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
+                        color: AppTheme.textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       context.translate('admin_auth_subtitle'),
-                      style: const TextStyle(color: Colors.white54, fontSize: 16),
+                      style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 16),
                     ),
                     const SizedBox(height: 48),
                     TextField(
                       controller: _usernameController,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                       decoration: InputDecoration(
                         labelText: context.translate('username'),
                         prefixIcon: const Icon(Icons.person_outline_rounded),
@@ -117,7 +112,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                       decoration: InputDecoration(
                         labelText: context.translate('password'),
                         prefixIcon: const Icon(Icons.lock_outline_rounded),

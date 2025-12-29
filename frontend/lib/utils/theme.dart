@@ -2,26 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Premium Neon Green & Dark Palette
-  static const Color primaryColor = Color(0xFFADFF2F); // Neon Green (Lime Green)
-  static const Color backgroundColor = Color(0xFF000000); // Pitch Black
-  static const Color surfaceColor = Color(0xFF121212); // Deep Grey Card
-  static const Color accentColor = Color(0xFF32CD32); // Forest Green for gradients
-  static const Color textColor = Color(0xFFFFFFFF); // Pure White
-  static const Color secondaryTextColor = Color(0xFFAAAAAA); // Muted Grey
-  static const Color errorColor = Color(0xFFFF3131); // Neon Red
+  // Fynix Premium Light Palette
+  static const Color primaryColor = Color(0xFFA6E63E); // Vibrant Lime Green
+  static const Color backgroundColor = Color(0xFFF7F9FC); // Ultra Light Grey
+  static const Color surfaceColor = Color(0xFFFFFFFF); // Pure White Cards
+  static const Color accentColor = Color(0xFF2D3142); // Navy/Dark for contrast
+  static const Color textColor = Color(0xFF1A1D1F); // Near Black
+  static const Color secondaryTextColor = Color(0xFF6F767E); // Muted Grey
+  static const Color errorColor = Color(0xFFFF6A55); // Soft Neon Red
 
-  static ThemeData darkTheme = ThemeData(
-    brightness: Brightness.dark,
+  static ThemeData lightTheme = ThemeData(
+    brightness: Brightness.light,
     primaryColor: primaryColor,
     scaffoldBackgroundColor: backgroundColor,
     cardColor: surfaceColor,
-    colorScheme: const ColorScheme.dark(
+    colorScheme: const ColorScheme.light(
       primary: primaryColor,
       secondary: accentColor,
       surface: surfaceColor,
       background: backgroundColor,
       error: errorColor,
+      onPrimary: Colors.black,
+      onSurface: textColor,
     ),
     textTheme: GoogleFonts.outfitTextTheme().copyWith(
       displayLarge: GoogleFonts.outfit(
@@ -44,11 +46,11 @@ class AppTheme {
       ),
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: backgroundColor,
+      backgroundColor: Colors.transparent,
       elevation: 0,
-      centerTitle: true,
+      centerTitle: false,
       titleTextStyle: GoogleFonts.outfit(
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: FontWeight.bold,
         color: textColor,
       ),
@@ -57,10 +59,10 @@ class AppTheme {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
-        foregroundColor: Colors.black, // Dark text on light green
+        foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
         ),
         textStyle: GoogleFonts.outfit(
           fontSize: 18,
@@ -71,11 +73,11 @@ class AppTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: primaryColor,
-        side: const BorderSide(color: primaryColor, width: 2),
+        foregroundColor: textColor,
+        side: BorderSide(color: textColor.withOpacity(0.1), width: 1.5),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
         ),
         textStyle: GoogleFonts.outfit(
           fontSize: 18,
@@ -83,23 +85,31 @@ class AppTheme {
         ),
       ),
     ),
+    cardTheme: CardThemeData(
+      color: surfaceColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: Colors.black.withOpacity(0.04)),
+      ),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: surfaceColor,
+      fillColor: Colors.white,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(24),
+        borderSide: BorderSide(color: Colors.black.withOpacity(0.05)),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF2A2A2A), width: 1.5),
+        borderRadius: BorderRadius.circular(24),
+        borderSide: BorderSide(color: Colors.black.withOpacity(0.05)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
       labelStyle: const TextStyle(color: secondaryTextColor),
-      hintStyle: const TextStyle(color: Color(0xFF444444)),
+      hintStyle: TextStyle(color: secondaryTextColor.withOpacity(0.5)),
       prefixIconColor: secondaryTextColor,
     ),
   );

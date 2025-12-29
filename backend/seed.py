@@ -21,6 +21,7 @@ def seed_data():
         admin = User.query.filter_by(mobile_number=admin_mobile).first()
         if not admin:
             admin = User(
+                name="Administrator",
                 mobile_number=admin_mobile,
                 username="admin",
                 business_name="Vasool Drive",
@@ -32,11 +33,12 @@ def seed_data():
             db.session.add(admin)
             print(f"Created admin user: {admin_mobile} (User: admin, Business: Vasool Drive)")
         else:
+            admin.name = "Administrator"
             admin.username = "admin"
             admin.business_name = "Vasool Drive"
             admin.password_hash = hashed_password
             admin.pin_hash = hashed_pin
-            print(f"Updated admin user {admin_mobile} with username and business name.")
+            print(f"Updated admin user {admin_mobile} with name, username and business name.")
 
         # Create Madhu admin
         madhu_mobile = "7904235240"
@@ -49,6 +51,7 @@ def seed_data():
         madhu = User.query.filter_by(mobile_number=madhu_mobile).first()
         if not madhu:
             madhu = User(
+                name="Madhu",
                 mobile_number=madhu_mobile,
                 username="madhu",
                 business_name="Vasool Drive",
@@ -60,6 +63,7 @@ def seed_data():
             db.session.add(madhu)
             print(f"Created admin user: {madhu_mobile} (Madhu)")
         else:
+            madhu.name = "Madhu"
             madhu.username = "madhu"
             madhu.business_name = "Vasool Drive"
             madhu.password_hash = hashed_password_m

@@ -32,6 +32,12 @@ class User(db.Model):
     last_login = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relationships for automated cleanup
+    face_embeddings = db.relationship('FaceEmbedding', backref='user', cascade="all, delete-orphan")
+    qr_codes = db.relationship('QRCode', backref='user', cascade="all, delete-orphan")
+    login_logs = db.relationship('LoginLog', backref='user', cascade="all, delete-orphan")
+    devices = db.relationship('Device', backref='user', cascade="all, delete-orphan")
+
 class FaceEmbedding(db.Model):
     __tablename__ = 'face_embeddings'
     id = db.Column(db.Integer, primary_key=True)

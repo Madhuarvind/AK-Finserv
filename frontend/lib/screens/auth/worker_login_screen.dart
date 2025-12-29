@@ -75,13 +75,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
       builder: (context, languageProvider, child) {
         return Scaffold(
           body: Container(
-            decoration: const BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(-0.5, -0.6),
-                radius: 1.2,
-                colors: [Color(0xFF1A1A1A), Color(0xFF000000)],
-              ),
-            ),
+            color: AppTheme.backgroundColor,
             child: SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
@@ -101,7 +95,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.admin_panel_settings_outlined, color: Colors.white70),
+                          icon: const Icon(Icons.admin_panel_settings_outlined, color: AppTheme.secondaryTextColor),
                           onPressed: () => Navigator.pushNamed(context, '/admin/login'),
                         ),
                       ],
@@ -122,17 +116,18 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                         fontSize: 40,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
+                        color: AppTheme.textColor,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       context.translate('worker_auth_subtitle'),
-                      style: const TextStyle(color: Colors.white54, fontSize: 16),
+                      style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 16),
                     ),
                     const SizedBox(height: 48),
                     TextField(
                       controller: _nameController,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                       decoration: InputDecoration(
                         labelText: context.translate('worker_name'),
                         prefixIcon: const Icon(Icons.person_outline_rounded),
@@ -143,7 +138,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                       controller: _pinController,
                       obscureText: true,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 8),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 8, color: AppTheme.textColor),
                       decoration: InputDecoration(
                         labelText: context.translate('pin'),
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -178,7 +173,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                         onPressed: () => Navigator.pushNamed(context, '/settings'),
                         child: Text(
                           context.translate('settings'),
-                          style: const TextStyle(color: Colors.white38),
+                          style: TextStyle(color: AppTheme.secondaryTextColor),
                         ),
                       ),
                     ),

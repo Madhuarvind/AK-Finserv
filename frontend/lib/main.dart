@@ -10,6 +10,8 @@ import 'screens/admin/admin_login_screen.dart';
 import 'screens/admin/face_registration_screen.dart';
 import 'screens/admin/worker_qr_screen.dart';
 import 'screens/admin/audit_logs_screen.dart';
+import 'screens/admin/user_management_screen.dart';
+import 'screens/admin/user_detail_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/worker_dashboard.dart';
 import 'package:camera/camera.dart';
@@ -44,7 +46,8 @@ class VasoolDriveApp extends StatelessWidget {
         return MaterialApp(
           title: 'Vasool Drive',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.darkTheme,
+          theme: AppTheme.lightTheme,
+          themeMode: ThemeMode.light,
           locale: languageProvider.currentLocale,
           initialRoute: '/',
           routes: {
@@ -70,6 +73,11 @@ class VasoolDriveApp extends StatelessWidget {
         },
         '/admin/add_agent': (context) => const AddAgentScreen(),
         '/admin/audit_logs': (context) => const AuditLogsScreen(),
+        '/admin/user_management': (context) => const UserManagementScreen(),
+        '/admin/user_detail': (context) {
+           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+           return UserDetailScreen(userId: args['user_id']);
+        },
         '/settings': (context) => const SettingsScreen(),
         '/home': (context) => const WorkerDashboard(),
       },

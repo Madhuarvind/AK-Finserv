@@ -326,6 +326,7 @@ def register_worker():
     area = data.get('area')
     address = data.get('address')
     id_proof = data.get('id_proof')
+    role_str = data.get('role', 'field_agent')
 
     if not mobile or not pin or not name:
         return jsonify({"msg": "Name, mobile and PIN are required"}), 400
@@ -336,8 +337,13 @@ def register_worker():
     if User.query.filter(User.name.ilike(name)).first():
         return jsonify({"msg": "Worker name already exists"}), 400
 
+    try:
+        role = UserRole(role_str)
+    except ValueError:
+        return jsonify({"msg": "Invalid role"}), 400
+
     hashed_pin = bcrypt.hashpw(pin.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    
+
     new_worker = User(
         name=name,
         mobile_number=mobile,
@@ -345,7 +351,7 @@ def register_worker():
         area=area,
         address=address,
         id_proof=id_proof,
-        role=UserRole.FIELD_AGENT,
+        role=role,
         is_first_login=False
     )
     db.session.add(new_worker)
@@ -411,6 +417,7 @@ def list_users():
         user_list.append({
             "id": u.id,
             "name": u.name,
+            "username": u.username,
             "mobile_number": u.mobile_number,
             "role": u.role.value,
             "area": u.area,
@@ -469,4 +476,213 @@ def get_audit_logs():
         })
     
     return jsonify(log_data), 200
+    
+@auth_bp.route('/users/<int:user_id>/biometrics', methods=['DELETE'])
+@jwt_required()
+def clear_biometrics(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
 
+    from models import FaceEmbedding
+    FaceEmbedding.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
+    
+    return jsonify({"msg": "Biometric data cleared successfully"}), 200
+
+@auth_bp.route('/users/<int:user_id>/reset-pin', methods=['PATCH'])
+@jwt_required()
+def reset_user_pin(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    data = request.get_json()
+    new_pin = data.get('new_pin')
+    
+    if not new_pin:
+        return jsonify({"msg": "New PIN required"}), 400
+
+    u = User.query.get_or_404(user_id)
+    hashed_pin = bcrypt.hashpw(new_pin.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    u.pin_hash = hashed_pin
+    u.is_first_login = True # Force worker to change it maybe? Or just reset it.
+    
+    db.session.commit()
+    return jsonify({"msg": "PIN reset successfully"}), 200
+
+@auth_bp.route('/users/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_user_detail(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    u = User.query.get_or_404(user_id)
+    # Check if device is bound
+    has_device = Device.query.filter_by(user_id=u.id, is_trusted=True).first() is not None
+    
+    # Get QR code token
+    from models import QRCode
+    qr_code = QRCode.query.filter_by(user_id=u.id).first()
+    qr_token = qr_code.qr_token if qr_code else None
+    
+    return jsonify({
+        "id": u.id,
+        "name": u.name,
+        "username": u.username,
+        "mobile_number": u.mobile_number,
+        "role": u.role.value,
+        "area": u.area,
+        "address": u.address,
+        "id_proof": u.id_proof,
+        "business_name": u.business_name,
+        "is_active": u.is_active,
+        "is_locked": u.is_locked,
+        "has_device_bound": has_device,
+        "qr_token": qr_token,
+        "created_at": u.created_at.isoformat()
+    }), 200
+
+@auth_bp.route('/users/<int:user_id>', methods=['PUT'])
+@jwt_required()
+def update_user(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    u = User.query.get_or_404(user_id)
+    data = request.get_json()
+
+    # Update fields if provided
+    if 'name' in data: u.name = data['name']
+    if 'mobile_number' in data: u.mobile_number = data['mobile_number']
+    if 'area' in data: u.area = data['area']
+    if 'address' in data: u.address = data['address']
+    if 'id_proof' in data: u.id_proof = data['id_proof']
+    if 'role' in data: 
+        try:
+            u.role = UserRole(data['role'])
+        except ValueError:
+            return jsonify({"msg": "Invalid role"}), 400
+    
+    if 'is_active' in data: u.is_active = bool(data['is_active'])
+    if 'is_locked' in data: u.is_locked = bool(data['is_locked'])
+
+    db.session.commit()
+    return jsonify({"msg": "User updated successfully"}), 200
+
+@auth_bp.route('/users/<int:user_id>/status', methods=['PATCH'])
+@jwt_required()
+def toggle_user_status(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    u = User.query.get_or_404(user_id)
+    data = request.get_json()
+
+    if 'is_active' in data:
+        u.is_active = bool(data['is_active'])
+        print(f"DEBUG: Toggled user {user_id} is_active to {u.is_active}")
+    if 'is_locked' in data:
+        u.is_locked = bool(data['is_locked'])
+        print(f"DEBUG: Toggled user {user_id} is_locked to {u.is_locked}")
+
+    db.session.commit()
+    print(f"DEBUG: Committed status change for user {user_id}")
+    return jsonify({"msg": "Status updated", "is_active": u.is_active, "is_locked": u.is_locked}), 200
+
+@auth_bp.route('/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    u = User.query.get_or_404(user_id)
+    
+    # Protect against self-deletion if needed, but let's assume admin knows what they are doing.
+    if u.id == admin.id:
+        return jsonify({"msg": "Cannot delete your own account"}), 400
+
+    # Automated cleanup handles dependencies via Relationship Cascades
+    db.session.delete(u)
+    db.session.commit()
+    
+    return jsonify({"msg": "User deleted successfully"}), 200
+
+@auth_bp.route('/users/<int:user_id>/biometrics-info', methods=['GET'])
+@jwt_required()
+def get_user_biometrics(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    from models import FaceEmbedding
+    face = FaceEmbedding.query.filter_by(user_id=user_id).first()
+    
+    if not face:
+        return jsonify({
+            "has_biometric": False,
+            "registered_at": None,
+            "device_id": None
+        }), 200
+    
+    return jsonify({
+        "has_biometric": True,
+        "registered_at": face.created_at.isoformat() if face.created_at else None,
+        "device_id": face.device_id,
+    }), 200
+
+@auth_bp.route('/users/<int:user_id>/login-stats', methods=['GET'])
+@jwt_required()
+def get_user_login_stats(user_id):
+    identity = get_jwt_identity()
+    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not admin or admin.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    # Get login statistics
+    total_logins = LoginLog.query.filter_by(user_id=user_id, status='success').count()
+    failed_logins = LoginLog.query.filter(
+        LoginLog.user_id == user_id,
+        LoginLog.status.in_(['failed', 'failed_device_mismatch'])
+    ).count()
+    
+    # Get last login
+    last_login_log = LoginLog.query.filter_by(user_id=user_id, status='success').order_by(LoginLog.login_time.desc()).first()
+    last_login = last_login_log.login_time.isoformat() if last_login_log else None
+    
+    # Get device information
+    devices = Device.query.filter_by(user_id=user_id).all()
+    device_list = []
+    for device in devices:
+        device_list.append({
+            "device_id": device.device_id,
+            "device_name": device.device_name,
+            "is_trusted": device.is_trusted,
+            "last_active": device.last_active.isoformat() if device.last_active else None,
+        })
+    
+    return jsonify({
+        "total_logins": total_logins,
+        "failed_logins": failed_logins,
+        "last_login": last_login,
+        "devices": device_list
+    }), 200

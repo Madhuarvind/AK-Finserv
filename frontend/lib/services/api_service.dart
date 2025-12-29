@@ -11,17 +11,21 @@ class ApiService {
 
   static String get baseUrl {
     if (kIsWeb) {
-      // Use 127.0.0.1 explicitly if host is localhost to avoid "Failed to fetch"
       final host = Uri.base.host;
-      final serverHost = (host == 'localhost' || host == '127.0.0.1') ? '127.0.0.1' : host;
-      return 'http://$serverHost:5000/api/auth';
-    }
-    // Mobile/Desktop path
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:5000/api/auth';
+      if (host == 'localhost' || host == '127.0.0.1') {
+        return 'http://127.0.0.1:5000/api/auth';
       }
-    } catch (e) {}
+      if (host.isNotEmpty && !host.startsWith('192.168.')) {
+        return 'http://$host:5000/api/auth';
+      }
+    } else if (Platform.isAndroid) {
+      // Check if running on an emulator (standard check or fallback)
+      // Usually developers use 10.0.2.2 for host localhost access
+      // For now, let's keep it simple and prioritize the server address, 
+      // but we could add a flag or check here if needed.
+    }
+    
+    // Default to the known working server address for all other platforms
     return 'http://$_serverAddress:5000/api/auth';
   }
   final _storage = const FlutterSecureStorage();
@@ -153,6 +157,7 @@ class ApiService {
     String? area,
     String? address,
     String? idProof,
+    String? role,
   }) async {
     try {
       final response = await http.post(
@@ -168,6 +173,7 @@ class ApiService {
           'area': area,
           'address': address,
           'id_proof': idProof,
+          'role': role ?? 'field_agent',
         }),
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
@@ -228,6 +234,137 @@ class ApiService {
     } catch (e) {
       print('API Error: $e');
       return {'msg': 'connection_failed'}; 
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserDetail(int userId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateUser(int userId, Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> patchUserStatus(int userId, Map<String, dynamic> statusData, String token) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/users/$userId/status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(statusData),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> clearBiometrics(int userId, String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/$userId/biometrics'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> resetUserPin(int userId, String newPin, String token) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/users/$userId/reset-pin'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'new_pin': newPin}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteUser(int userId, String token) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserBiometrics(int userId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/$userId/biometrics-info'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed', 'has_biometric': false};
+    }
+  }
+
+  Future<Map<String, dynamic>> getUserLoginStats(int userId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/$userId/login-stats'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('API Error: $e');
+      return {'msg': 'connection_failed', 'total_logins': 0, 'failed_logins': 0};
     }
   }
 

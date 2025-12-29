@@ -14,6 +14,12 @@ import 'screens/admin/user_management_screen.dart';
 import 'screens/admin/user_detail_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/worker_dashboard.dart';
+import 'screens/profile_screen.dart';
+import 'screens/security_settings_screen.dart';
+import 'screens/face_enrollment_screen.dart';
+import 'screens/collection_entry_screen.dart';
+import 'screens/admin/team_management_screen.dart';
+import 'screens/admin/performance_analytics_screen.dart';
 import 'package:camera/camera.dart';
 
 late List<CameraDescription> cameras;
@@ -80,6 +86,12 @@ class VasoolDriveApp extends StatelessWidget {
         },
         '/settings': (context) => const SettingsScreen(),
         '/home': (context) => const WorkerDashboard(),
+        '/profile': (context) => const ProfileScreen(),
+        '/security': (context) => const SecuritySettingsScreen(),
+        '/enroll_face': (context) => const FaceEnrollmentScreen(),
+        '/collection_entry': (context) => const CollectionEntryScreen(),
+        '/admin/team': (context) => const TeamManagementScreen(),
+        '/admin/analytics': (context) => const PerformanceAnalyticsScreen(),
       },
      );
     },

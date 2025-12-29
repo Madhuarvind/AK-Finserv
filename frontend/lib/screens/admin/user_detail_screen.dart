@@ -345,7 +345,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
                                                 child: Text(
-                                                  'Trusted',
+                                                  context.translate('trusted'),
                                                   style: TextStyle(color: AppTheme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold),
                                                 ),
                                               ),

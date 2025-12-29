@@ -327,6 +327,7 @@ def register_worker():
     address = data.get('address')
     id_proof = data.get('id_proof')
     role_str = data.get('role', 'field_agent')
+    manager_id = data.get('manager_id')
 
     if not mobile or not pin or not name:
         return jsonify({"msg": "Name, mobile and PIN are required"}), 400
@@ -352,6 +353,7 @@ def register_worker():
         address=address,
         id_proof=id_proof,
         role=role,
+        manager_id=manager_id,
         is_first_login=False
     )
     db.session.add(new_worker)
@@ -686,3 +688,87 @@ def get_user_login_stats(user_id):
         "last_login": last_login,
         "devices": device_list
     }), 200
+
+@auth_bp.route('/my-profile', methods=['GET'])
+@jwt_required()
+def get_my_profile():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+    
+    face = FaceEmbedding.query.filter_by(user_id=user.id).first()
+    qr = QRCode.query.filter_by(user_id=user.id).first()
+    
+    return jsonify({
+        "id": user.id,
+        "name": user.name,
+        "username": user.username,
+        "mobile_number": user.mobile_number,
+        "role": user.role.value,
+        "area": user.area,
+        "address": user.address,
+        "id_proof": user.id_proof,
+        "is_active": user.is_active,
+        "last_login": user.last_login.isoformat() if user.last_login else None,
+        "has_biometric": face is not None,
+        "qr_token": qr.qr_token if qr else None
+    }), 200
+
+@auth_bp.route('/my-team', methods=['GET'])
+@jwt_required()
+def get_my_team():
+    current_user_id = get_jwt_identity()
+    # Handle both username/mobile identity
+    user = User.query.filter((User.id == current_user_id) | (User.mobile_number == current_user_id) | (User.username == current_user_id)).first()
+    
+    if not user or (user.role != UserRole.MANAGER and user.role != UserRole.ADMIN):
+        return jsonify({"msg": "Access Denied"}), 403
+    
+    team = User.query.filter_by(manager_id=user.id).all()
+    team_list = []
+    for member in team:
+        face = FaceEmbedding.query.filter_by(user_id=member.id).first()
+        team_list.append({
+            "id": member.id,
+            "name": member.name,
+            "mobile_number": member.mobile_number,
+            "role": member.role.value,
+            "is_active": member.is_active,
+            "is_locked": member.is_locked,
+            "has_biometric": face is not None
+        })
+    return jsonify(team_list), 200
+
+@auth_bp.route('/stats/performance', methods=['GET'])
+@jwt_required()
+def get_performance_stats():
+    identity = get_jwt_identity()
+    user = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
+    
+    if not user or user.role != UserRole.ADMIN:
+        return jsonify({"msg": "Access Denied"}), 403
+    
+    # 1. Role Distribution
+    roles_count = db.session.query(User.role, db.func.count(User.id)).group_by(User.role).all()
+    role_dist = {r.value: count for r, count in roles_count}
+    
+    # 2. Biometric Adoption Rate
+    total_users = User.query.count()
+    users_with_bio = FaceEmbedding.query.join(User).count()
+    bio_rate = (users_with_bio / total_users * 100) if total_users > 0 else 0
+    
+    # 3. Last 7 days login activity
+    today = datetime.utcnow().date()
+    activity_data = []
+    for i in range(7):
+        date = today - timedelta(days=i)
+        count = LoginLog.query.filter(db.func.date(LoginLog.login_time) == date).count()
+        activity_data.append({"date": date.isoformat(), "count": count})
+    
+    return jsonify({
+        "role_distribution": role_dist,
+        "biometric_adoption": round(bio_rate, 2),
+        "login_activity": list(reversed(activity_data))
+    }), 200
+

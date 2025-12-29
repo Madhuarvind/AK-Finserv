@@ -7,6 +7,9 @@ import '../../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/app_drawer.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'profile_screen.dart';
+import 'security_settings_screen.dart';
+import 'admin/team_management_screen.dart';
 
 class WorkerDashboard extends StatefulWidget {
   const WorkerDashboard({super.key});
@@ -214,15 +217,28 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
       crossAxisSpacing: 16,
       childAspectRatio: 1.5,
       children: [
-        _buildActionItem(context.translate('qr_scan'), Icons.qr_code_scanner_rounded, Colors.orange),
-        _buildActionItem(context.translate('collection'), Icons.add_circle_outline_rounded, Colors.greenAccent),
-        _buildActionItem(context.translate('expense'), Icons.receipt_long_rounded, Colors.redAccent),
-        _buildActionItem(context.translate('reports'), Icons.bar_chart_rounded, Colors.purpleAccent),
+        _buildActionItem(context.translate('qr_scan'), Icons.qr_code_scanner_rounded, Colors.orange, () {}),
+        _buildActionItem(context.translate('collection'), Icons.add_circle_outline_rounded, Colors.greenAccent, () {
+          Navigator.pushNamed(context, '/collection_entry');
+        }),
+        _buildActionItem(context.translate('expense'), Icons.receipt_long_rounded, Colors.pinkAccent, () {}),
+        _buildActionItem(context.translate('my_profile'), Icons.person_outline_rounded, Colors.blue, () {
+          Navigator.pushNamed(context, '/profile');
+        }),
+        _buildActionItem(context.translate('security_hub'), Icons.security_rounded, Colors.indigoAccent, () {
+          Navigator.pushNamed(context, '/security');
+        }),
+        if (_role == 'manager')
+          _buildActionItem(context.translate('my_team'), Icons.groups_rounded, Colors.green, () {
+            Navigator.pushNamed(context, '/admin/team');
+          })
+        else
+          _buildActionItem(context.translate('reports'), Icons.bar_chart_rounded, Colors.purpleAccent, () {}),
       ],
     );
   }
 
-  Widget _buildActionItem(String label, IconData icon, Color color) {
+  Widget _buildActionItem(String label, IconData icon, Color color, VoidCallback onTap) {
     return Container(
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
@@ -232,7 +248,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

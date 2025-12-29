@@ -456,4 +456,152 @@ class ApiService {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>> getMyProfile(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/my-profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<List<dynamic>> getMyTeam(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/my-team'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getPerformanceStats(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/stats/performance'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  // Collection & Customer Management
+  Future<List<dynamic>> getCustomers(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/customers'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getCustomerLoans(int customerId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/loans/$customerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> submitCollection({
+    required int loanId,
+    required double amount,
+    required String paymentMode,
+    double? latitude,
+    double? longitude,
+    required String token,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/submit'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'loan_id': loanId,
+          'amount': amount,
+          'payment_mode': paymentMode,
+          'latitude': latitude,
+          'longitude': longitude,
+        }),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<List<dynamic>> getPendingCollections(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/pending'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCollectionStatus(int collectionId, String status, String token) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/$collectionId/status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'status': status}),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
 }

@@ -59,7 +59,7 @@ class AppDrawer extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        isAdmin ? 'Administrator' : 'Field Agent',
+                        isAdmin ? 'Administrator' : (role == 'manager' ? 'Manager' : 'Field Agent'),
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: AppTheme.secondaryTextColor,
@@ -92,6 +92,34 @@ class AppDrawer extends StatelessWidget {
                   isActive: true,
                   onTap: () => Navigator.pop(context),
                 ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.person_outline_rounded,
+                  label: context.translate('my_profile'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.security_rounded,
+                  label: context.translate('security_hub'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/security');
+                  },
+                ),
+                if (role == 'manager')
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.groups_rounded,
+                    label: context.translate('my_team'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/team');
+                    },
+                  ),
                 if (isAdmin) ...[
                   _buildDrawerItem(
                     context,
@@ -104,11 +132,11 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context,
-                    icon: Icons.person_add_alt_1_outlined,
-                    label: context.translate('add_worker'),
+                    icon: Icons.analytics_outlined,
+                    label: context.translate('performance_analytics'),
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.pushNamed(context, '/admin/add_agent');
+                      Navigator.pushNamed(context, '/admin/analytics');
                     },
                   ),
                   _buildDrawerItem(

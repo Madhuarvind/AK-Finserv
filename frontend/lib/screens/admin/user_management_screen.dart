@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'user_detail_screen.dart';
 import 'add_user_wizard_screen.dart';
+import 'performance_analytics_screen.dart';
 import 'package:universal_html/html.dart' as html;
 import 'dart:io' as io;
 import 'package:path_provider/path_provider.dart';
@@ -310,7 +311,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       
       if (mounted && kIsWeb) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Downloaded ${_filteredUsers.length} users as CSV!'), duration: const Duration(seconds: 3)),
+          SnackBar(content: Text('${context.translate('success')}! Downloaded ${_filteredUsers.length} ${context.translate('users')}'), duration: const Duration(seconds: 3)),
         );
       }
     } catch (e) {
@@ -332,7 +333,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             backgroundColor: Colors.transparent,
             title: _selectionMode
               ? Text(
-                  '${_selectedUserIds.length} selected',
+                  '${_selectedUserIds.length} ${context.translate('selected')}',
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
                 )
               : Text(
@@ -344,7 +345,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   IconButton(
                     icon: const Icon(Icons.done_all),
                     onPressed: _selectAll,
-                    tooltip: 'Select All',
+                    tooltip: context.translate('select_all'),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -354,14 +355,14 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         _selectionMode = false;
                       });
                     },
-                    tooltip: 'Cancel',
+                    tooltip: context.translate('cancel'),
                   ),
                 ]
               : [
                   IconButton(
                     icon: const Icon(Icons.download_rounded),
                     onPressed: _exportToCSV,
-                    tooltip: 'Export to CSV',
+                    tooltip: context.translate('export_csv'),
                   ),
                   IconButton(
                     icon: const Icon(Icons.checklist_rtl_rounded),
@@ -370,7 +371,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         _selectionMode = true;
                       });
                     },
-                    tooltip: 'Select Mode',
+                    tooltip: context.translate('select_mode'),
                   ),
                 ],
           ),
@@ -440,7 +441,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 child: Row(
                   children: [
                     Text(
-                      '${_filteredUsers.length} ${_filteredUsers.length == 1 ? 'user' : 'users'}',
+                      '${_filteredUsers.length} ${context.translate('users')}',
                       style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                     const Spacer(),
@@ -577,13 +578,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                     }
                                   },
                                   itemBuilder: (context) => [
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'view',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.visibility_outlined, size: 20),
-                                          SizedBox(width: 12),
-                                          Text('View Details'),
+                                          const Icon(Icons.visibility_outlined, size: 20),
+                                          const SizedBox(width: 12),
+                                          Text(context.translate('view_details')),
                                         ],
                                       ),
                                     ),
@@ -592,18 +593,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                       child: Row(
                                         children: [
                                           Icon(isActive ? Icons.block : Icons.check_circle_outline, size: 20),
-                                          SizedBox(width: 12),
-                                          Text(isActive ? 'Deactivate' : 'Activate'),
+                                          const SizedBox(width: 12),
+                                          Text(isActive ? context.translate('deactivate') : context.translate('activate')),
                                         ],
                                       ),
                                     ),
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'delete',
                                       child: Row(
                                         children: [
-                                          Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                                          SizedBox(width: 12),
-                                          Text('Delete', style: TextStyle(color: Colors.red)),
+                                          const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                          const SizedBox(width: 12),
+                                          Text(context.translate('delete'), style: const TextStyle(color: Colors.red)),
                                         ],
                                       ),
                                     ),
@@ -692,7 +693,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   );
                 },
                 icon: const Icon(Icons.more_horiz),
-                label: Text('${_selectedUserIds.length} Actions'),
+                label: Text('${_selectedUserIds.length} ${context.translate('actions')}'),
                 backgroundColor: AppTheme.primaryColor,
               )
             : FloatingActionButton.extended(
@@ -704,7 +705,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   if (result == true) _fetchUsers();
                 },
                 icon: const Icon(Icons.person_add_rounded),
-                label: const Text('Add User'),
+                label: Text(context.translate('add_worker')),
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.black,
               ),
@@ -719,19 +720,42 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final lockedUsers = _users.where((u) => u['is_locked'] == true).length;
     final withBiometric = _users.where((u) => u['has_device_bound'] == true).length;
     
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(child: _buildStatCard(totalUsers.toString(), 'Total', Icons.people_outline, AppTheme.primaryColor)),
-          const SizedBox(width: 8),
-          Expanded(child: _buildStatCard(activeUsers.toString(), 'Active', Icons.check_circle_outline, Colors.green)),
-          const SizedBox(width: 8),
-          Expanded(child: _buildStatCard(lockedUsers.toString(), 'Locked', Icons.lock_outline, AppTheme.errorColor)),
-          const SizedBox(width: 8),
-          Expanded(child: _buildStatCard(withBiometric.toString(), 'Bio', Icons.fingerprint, Colors.blueAccent)),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Overview',
+                style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.secondaryTextColor),
+              ),
+              TextButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/admin/analytics'),
+                icon: const Icon(Icons.analytics_outlined, size: 16),
+                label: Text(context.translate('performance_analytics'), style: const TextStyle(fontSize: 12)),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.primaryColor),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(child: _buildStatCard(totalUsers.toString(), context.translate('total'), Icons.people_outline, AppTheme.primaryColor)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildStatCard(activeUsers.toString(), context.translate('active'), Icons.check_circle_outline, Colors.green)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildStatCard(lockedUsers.toString(), context.translate('locked'), Icons.lock_outline, AppTheme.errorColor)),
+              const SizedBox(width: 8),
+              Expanded(child: _buildStatCard(withBiometric.toString(), context.translate('bio'), Icons.fingerprint, Colors.blueAccent)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -800,10 +824,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             Wrap(
               spacing: 8,
               children: [
-                _buildFilterChip('All', _filterRole == 'all', () => setState(() { _filterRole = 'all'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Admin', _filterRole == 'admin', () => setState(() { _filterRole = 'admin'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Manager', _filterRole == 'manager', () => setState(() { _filterRole = 'manager'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Field Agent', _filterRole == 'field_agent', () => setState(() { _filterRole = 'field_agent'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('all'), _filterRole == 'all', () => setState(() { _filterRole = 'all'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('admin'), _filterRole == 'admin', () => setState(() { _filterRole = 'admin'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('manager'), _filterRole == 'manager', () => setState(() { _filterRole = 'manager'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('field_agent'), _filterRole == 'field_agent', () => setState(() { _filterRole = 'field_agent'; _applyFilters(); Navigator.pop(context); })),
               ],
             ),
             const SizedBox(height: 20),
@@ -814,10 +838,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             Wrap(
               spacing: 8,
               children: [
-                _buildFilterChip('All', _filterStatus == 'all', () => setState(() { _filterStatus = 'all'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Active', _filterStatus == 'active', () => setState(() { _filterStatus = 'active'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Inactive', _filterStatus == 'inactive', () => setState(() { _filterStatus = 'inactive'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Locked', _filterStatus == 'locked', () => setState(() { _filterStatus = 'locked'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('all'), _filterStatus == 'all', () => setState(() { _filterStatus = 'all'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('active'), _filterStatus == 'active', () => setState(() { _filterStatus = 'active'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('inactive'), _filterStatus == 'inactive', () => setState(() { _filterStatus = 'inactive'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('locked'), _filterStatus == 'locked', () => setState(() { _filterStatus = 'locked'; _applyFilters(); Navigator.pop(context); })),
               ],
             ),
             const SizedBox(height: 20),
@@ -828,9 +852,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             Wrap(
               spacing: 8,
               children: [
-                _buildFilterChip('All', _filterBiometric == 'all', () => setState(() { _filterBiometric = 'all'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Registered', _filterBiometric == 'registered', () => setState(() { _filterBiometric = 'registered'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip('Not Registered', _filterBiometric == 'not_registered', () => setState(() { _filterBiometric = 'not_registered'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('all'), _filterBiometric == 'all', () => setState(() { _filterBiometric = 'all'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('registered'), _filterBiometric == 'registered', () => setState(() { _filterBiometric = 'registered'; _applyFilters(); Navigator.pop(context); })),
+                _buildFilterChip(context.translate('not_registered'), _filterBiometric == 'not_registered', () => setState(() { _filterBiometric = 'not_registered'; _applyFilters(); Navigator.pop(context); })),
               ],
             ),
             const SizedBox(height: 20),

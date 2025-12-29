@@ -20,7 +20,9 @@ def create_app():
     jwt.init_app(app)
 
     from routes.auth import auth_bp
+    from routes.collection import collection_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(collection_bp, url_prefix='/api/collection')
 
     return app
 

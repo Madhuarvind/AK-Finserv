@@ -51,6 +51,8 @@ dependencies:
   qr_flutter: ^4.1.0
   csv: ^6.0.0
   universal_html: ^2.2.4
+  fl_chart: ^0.70.2
+  geolocator: ^13.0.1
 
 dev_dependencies:
   flutter_test:

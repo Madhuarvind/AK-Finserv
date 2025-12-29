@@ -32,6 +32,10 @@ class User(db.Model):
     last_login = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Manager Hierarchy
+    manager_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    assigned_agents = db.relationship('User', backref=db.backref('manager', remote_side=[id]))
+
     # Relationships for automated cleanup
     face_embeddings = db.relationship('FaceEmbedding', backref='user', cascade="all, delete-orphan")
     qr_codes = db.relationship('QRCode', backref='user', cascade="all, delete-orphan")
@@ -78,3 +82,35 @@ class OTPLog(db.Model):
     otp_code = db.Column(db.String(6), nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
+
+class Customer(db.Model):
+    __tablename__ = 'customers'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    mobile_number = db.Column(db.String(15), unique=True, nullable=False)
+    address = db.Column(db.Text, nullable=True)
+    area = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Loan(db.Model):
+    __tablename__ = 'loans'
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    interest_rate = db.Column(db.Float, default=10.0)
+    total_installments = db.Column(db.Integer, default=100)
+    pending_amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='active')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Collection(db.Model):
+    __tablename__ = 'collections'
+    id = db.Column(db.Integer, primary_key=True)
+    loan_id = db.Column(db.Integer, db.ForeignKey('loans.id'), nullable=False)
+    agent_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    payment_mode = db.Column(db.String(20), default='cash')
+    status = db.Column(db.String(20), default='pending')
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../utils/theme.dart';
 import 'services/language_service.dart';
 import 'screens/auth/worker_login_screen.dart';
@@ -18,9 +17,15 @@ import 'screens/profile_screen.dart';
 import 'screens/security_settings_screen.dart';
 import 'screens/face_enrollment_screen.dart';
 import 'screens/collection_entry_screen.dart';
+import 'screens/admin/manager_review_screen.dart';
+import 'screens/admin/financial_analytics_screen.dart';
 import 'screens/admin/team_management_screen.dart';
 import 'screens/admin/performance_analytics_screen.dart';
 import 'package:camera/camera.dart';
+import 'screens/admin/manage_lines_screen.dart';
+import 'screens/admin/line_customers_screen.dart';
+import 'screens/agent_lines_screen.dart';
+import 'screens/admin/admin_customer_list_screen.dart';
 
 late List<CameraDescription> cameras;
 
@@ -62,27 +67,36 @@ class VasoolDriveApp extends StatelessWidget {
         '/admin/login': (context) => const AdminLoginScreen(),
         '/admin/dashboard': (context) => const AdminDashboard(),
         '/admin/face_register': (context) {
-           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-           return FaceRegistrationScreen(
-             userId: args['user_id'],
-             userName: args['name'],
-             qrToken: args['qr_token'],
-           );
+           final args = ModalRoute.of(context)?.settings.arguments;
+           if (args is Map<String, dynamic>) {
+             return FaceRegistrationScreen(
+               userId: args['user_id'],
+               userName: args['name'],
+               qrToken: args['qr_token'],
+             );
+           }
+           return const Scaffold(body: Center(child: Text('Error: Missing arguments details')));
         },
         '/admin/worker_qr': (context) {
-           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-           return WorkerQrScreen(
-             userId: args['user_id'],
-             name: args['name'],
-             qrToken: args['qr_token'],
-           );
+           final args = ModalRoute.of(context)?.settings.arguments;
+           if (args is Map<String, dynamic>) {
+             return WorkerQrScreen(
+               userId: args['user_id'],
+               name: args['name'],
+               qrToken: args['qr_token'],
+             );
+           }
+           return const Scaffold(body: Center(child: Text('Error: Missing worker details')));
         },
         '/admin/add_agent': (context) => const AddAgentScreen(),
         '/admin/audit_logs': (context) => const AuditLogsScreen(),
         '/admin/user_management': (context) => const UserManagementScreen(),
         '/admin/user_detail': (context) {
-           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-           return UserDetailScreen(userId: args['user_id']);
+           final args = ModalRoute.of(context)?.settings.arguments;
+           if (args is Map<String, dynamic>) {
+             return UserDetailScreen(userId: args['user_id']);
+           }
+           return const Scaffold(body: Center(child: Text('Error: Missing user ID')));
         },
         '/settings': (context) => const SettingsScreen(),
         '/home': (context) => const WorkerDashboard(),
@@ -90,8 +104,20 @@ class VasoolDriveApp extends StatelessWidget {
         '/security': (context) => const SecuritySettingsScreen(),
         '/enroll_face': (context) => const FaceEnrollmentScreen(),
         '/collection_entry': (context) => const CollectionEntryScreen(),
+        '/admin/review': (context) => const ManagerReviewScreen(),
+        '/admin/financial_stats': (context) => const FinancialAnalyticsScreen(),
         '/admin/team': (context) => const TeamManagementScreen(),
         '/admin/analytics': (context) => const PerformanceAnalyticsScreen(),
+        '/admin/lines': (context) => const ManageLinesScreen(),
+        '/admin/line_customers': (context) {
+           final line = ModalRoute.of(context)?.settings.arguments;
+           if (line is Map<String, dynamic>) {
+             return LineCustomersScreen(line: line);
+           }
+           return const Scaffold(body: Center(child: Text('Error: Missing line details')));
+        },
+        '/agent/lines': (context) => const AgentLinesScreen(),
+        '/admin/customers': (context) => const AdminCustomerListScreen(),
       },
      );
     },

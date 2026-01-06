@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import '../utils/theme.dart';
 import '../main.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -60,7 +58,7 @@ class _FaceCaptureWidgetState extends State<FaceCaptureWidget> {
 
     try {
       await _initializeControllerFuture;
-      final image = await _controller!.takePicture();
+      await _controller!.takePicture();
       
       // Simulate embedding extraction (in production, use ML model)
       // For MVP, we'll generate a dummy embedding based on image properties
@@ -135,7 +133,7 @@ class _FaceCaptureWidgetState extends State<FaceCaptureWidget> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.2),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
                           blurRadius: 40,
                           spreadRadius: 10,
                         ),
@@ -167,7 +165,7 @@ class _FaceCaptureWidgetState extends State<FaceCaptureWidget> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(200),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 2,
                         strokeAlign: BorderSide.strokeAlignInside,
                       ),

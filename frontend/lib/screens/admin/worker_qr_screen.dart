@@ -44,7 +44,7 @@ class WorkerQrScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Digital Identity Token',
-                  style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.7), fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppTheme.primaryColor.withValues(alpha: 0.7), fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 48),
                 Center(
@@ -55,7 +55,7 @@ class WorkerQrScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.2),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.2),
                           blurRadius: 40,
                           spreadRadius: 10,
                         ),

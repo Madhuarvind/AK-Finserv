@@ -151,7 +151,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                 decoration: BoxDecoration(
                                   color: AppTheme.backgroundColor,
                                   borderRadius: BorderRadius.circular(28),
-                                  border: Border.all(color: Colors.black.withOpacity(0.04)),
+                                  border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                                 ),
                                 child: Icon(
                                   _role == 'admin' ? Icons.shield_outlined : Icons.person_outline_rounded,
@@ -211,21 +211,21 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.black.withOpacity(0.04)),
+                              border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                             ),
                             child: Column(
                               children: [
                                 SwitchListTile(
                                   value: _isActive,
                                   title: Text(context.translate('active'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  activeColor: AppTheme.primaryColor,
+                                  activeThumbColor: AppTheme.primaryColor,
                                   onChanged: (val) => setState(() => _isActive = val),
                                 ),
-                                Divider(color: Colors.black.withOpacity(0.05)),
+                                Divider(color: Colors.black.withValues(alpha: 0.05)),
                                 SwitchListTile(
                                   value: _isLocked,
                                   title: Text(context.translate('locked'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  activeColor: AppTheme.errorColor,
+                                  activeThumbColor: AppTheme.errorColor,
                                   onChanged: (val) => setState(() => _isLocked = val),
                                 ),
                               ],
@@ -240,7 +240,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.black.withOpacity(0.04)),
+                              border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                             ),
                             child: _loginStats == null
                               ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
@@ -269,7 +269,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                       ],
                                     ),
                                     const SizedBox(height: 16),
-                                    Divider(color: Colors.black.withOpacity(0.05)),
+                                    Divider(color: Colors.black.withValues(alpha: 0.05)),
                                     const SizedBox(height: 12),
                                     // Last Login
                                     Row(
@@ -294,7 +294,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                     // Device Info
                                     if (_loginStats!['devices'] != null && (_loginStats!['devices'] as List).isNotEmpty) ...[
                                       const SizedBox(height: 16),
-                                      Divider(color: Colors.black.withOpacity(0.05)),
+                                      Divider(color: Colors.black.withValues(alpha: 0.05)),
                                       const SizedBox(height: 12),
                                       Row(
                                         children: [
@@ -341,7 +341,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                               Container(
                                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                 decoration: BoxDecoration(
-                                                  color: AppTheme.primaryColor.withOpacity(0.1),
+                                                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
                                                 child: Text(
@@ -351,7 +351,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                               ),
                                           ],
                                         ),
-                                      )).toList(),
+                                      )),
                                     ],
                                   ],
                                 ),
@@ -366,7 +366,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: Colors.black.withOpacity(0.04)),
+                                border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                               ),
                               child: Column(
                                 children: [
@@ -380,7 +380,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2), width: 2),
+                                      border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2), width: 2),
                                     ),
                                     child: QrImageView(
                                       data: _qrToken!,
@@ -408,7 +408,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.black.withOpacity(0.04)),
+                              border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                             ),
                             child: _biometricsInfo == null
                               ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
@@ -421,8 +421,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: _biometricsInfo!['has_biometric'] == true 
-                                              ? Colors.green.withOpacity(0.1) 
-                                              : Colors.grey.withOpacity(0.1),
+                                              ? Colors.green.withValues(alpha: 0.1) 
+                                              : Colors.grey.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
                                           child: Icon(
@@ -452,8 +452,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                           decoration: BoxDecoration(
                                             color: _biometricsInfo!['has_biometric'] == true 
-                                              ? Colors.green.withOpacity(0.1) 
-                                              : Colors.grey.withOpacity(0.1),
+                                              ? Colors.green.withValues(alpha: 0.1) 
+                                              : Colors.grey.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Text(
@@ -469,7 +469,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                     ),
                                     if (_biometricsInfo!['has_biometric'] == true && _biometricsInfo!['device_id'] != null) ...[
                                       const SizedBox(height: 16),
-                                      Divider(color: Colors.black.withOpacity(0.05)),
+                                      Divider(color: Colors.black.withValues(alpha: 0.05)),
                                       const SizedBox(height: 12),
                                       Row(
                                         children: [
@@ -501,47 +501,47 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: Colors.black.withOpacity(0.04)),
+                                border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                               ),
                               child: Column(
                                 children: [
                                   ListTile(
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      decoration: BoxDecoration(color: AppTheme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                                       child: const Icon(Icons.pin_rounded, color: AppTheme.primaryColor, size: 20),
                                     ),
                                     title: Text(context.translate('reset_pin'), style: const TextStyle(fontWeight: FontWeight.bold)),
                                     trailing: const Icon(Icons.chevron_right_rounded, color: Colors.black12),
                                     onTap: _handleResetPin,
                                   ),
-                                  Divider(color: Colors.black.withOpacity(0.05), height: 1),
+                                  Divider(color: Colors.black.withValues(alpha: 0.05), height: 1),
                                   ListTile(
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(color: Colors.orangeAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                                       child: const Icon(Icons.face_retouching_off_rounded, color: Colors.orangeAccent, size: 20),
                                     ),
                                     title: Text(context.translate('clear_biometrics'), style: const TextStyle(fontWeight: FontWeight.bold)),
                                     trailing: const Icon(Icons.delete_outline_rounded, color: Colors.black12),
                                     onTap: _handleClearBiometrics,
                                   ),
-                                  Divider(color: Colors.black.withOpacity(0.05), height: 1),
+                                  Divider(color: Colors.black.withValues(alpha: 0.05), height: 1),
                                   ListTile(
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(color: AppTheme.errorColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      decoration: BoxDecoration(color: AppTheme.errorColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                                       child: const Icon(Icons.phonelink_erase_rounded, color: AppTheme.errorColor, size: 20),
                                     ),
                                     title: Text(context.translate('reset_device_binding'), style: const TextStyle(fontWeight: FontWeight.bold)),
                                     trailing: const Icon(Icons.refresh_rounded, color: Colors.black12),
                                     onTap: _handleResetDevice,
                                   ),
-                                  Divider(color: Colors.black.withOpacity(0.05), height: 1),
+                                  Divider(color: Colors.black.withValues(alpha: 0.05), height: 1),
                                   ListTile(
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(color: AppTheme.errorColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      decoration: BoxDecoration(color: AppTheme.errorColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                                       child: const Icon(Icons.delete_forever_rounded, color: AppTheme.errorColor, size: 20),
                                     ),
                                     title: Text(context.translate('delete_user'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.errorColor)),
@@ -635,33 +635,6 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     }
   }
 
-  Future<void> _handleResetDevice() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.translate('reset_device_binding')),
-        content: Text(context.translate('reset_confirm_content')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.translate('cancel'))),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true), 
-            child: Text(context.translate('reset_device_binding'), style: const TextStyle(color: AppTheme.errorColor))
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      final token = await _storage.read(key: 'jwt_token');
-      if (token != null) {
-        final result = await _apiService.resetDevice(widget.userId, token);
-        if (result.containsKey('msg')) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('success'))));
-        }
-      }
-    }
-  }
-
   Future<void> _handleDeleteUser() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -706,7 +679,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

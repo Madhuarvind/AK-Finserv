@@ -722,10 +722,12 @@ def get_my_team():
     # Handle both username/mobile identity
     user = User.query.filter((User.id == current_user_id) | (User.mobile_number == current_user_id) | (User.username == current_user_id)).first()
     
-    if not user or (user.role != UserRole.MANAGER and user.role != UserRole.ADMIN):
+    if not user or user.role != UserRole.ADMIN:
         return jsonify({"msg": "Access Denied"}), 403
     
-    team = User.query.filter_by(manager_id=user.id).all()
+    # For now, let's say "My Team" for an Admin is all field agents
+    # Or we can keep it as manager_id if hierarchy is still desired between admins/agents
+    team = User.query.filter_by(role=UserRole.FIELD_AGENT).all()
     team_list = []
     for member in team:
         face = FaceEmbedding.query.filter_by(user_id=member.id).first()
@@ -751,7 +753,7 @@ def get_performance_stats():
     
     # 1. Role Distribution
     roles_count = db.session.query(User.role, db.func.count(User.id)).group_by(User.role).all()
-    role_dist = {r.value: count for r, count in roles_count}
+    role_dist = {r.name.lower(): count for r, count in roles_count}
     
     # 2. Biometric Adoption Rate
     total_users = User.query.count()

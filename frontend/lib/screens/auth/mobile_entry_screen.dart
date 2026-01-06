@@ -18,7 +18,7 @@ class _MobileEntryScreenState extends State<MobileEntryScreen> {
   final TextEditingController _nameController = TextEditingController();
   final ApiService _apiService = ApiService();
   final LocalDbService _localDbService = LocalDbService();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {
@@ -96,7 +96,7 @@ class _MobileEntryScreenState extends State<MobileEntryScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.account_balance_wallet_outlined, size: 48, color: AppTheme.primaryColor),

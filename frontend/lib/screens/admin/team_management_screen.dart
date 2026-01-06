@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../utils/theme.dart';
 import '../../services/api_service.dart';
 import '../../utils/localizations.dart';
-import 'package:provider/provider.dart';
-import '../../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -77,16 +75,16 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.1),
+        color: AppTheme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildSummaryItem(total.toString(), context.translate('total')),
-          Container(width: 1, height: 30, color: AppTheme.primaryColor.withOpacity(0.2)),
+          Container(width: 1, height: 30, color: AppTheme.primaryColor.withValues(alpha: 0.2)),
           _buildSummaryItem(active.toString(), context.translate('active')),
-          Container(width: 1, height: 30, color: AppTheme.primaryColor.withOpacity(0.2)),
+          Container(width: 1, height: 30, color: AppTheme.primaryColor.withValues(alpha: 0.2)),
           _buildSummaryItem((total - active).toString(), context.translate('inactive')),
         ],
       ),
@@ -107,7 +105,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.group_off_rounded, size: 80, color: Colors.grey.withOpacity(0.3)),
+          Icon(Icons.group_off_rounded, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text(
             'No agents assigned to you yet',
@@ -127,7 +125,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -135,7 +133,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
           children: [
             CircleAvatar(
               backgroundColor: AppTheme.backgroundColor,
-              child: Icon(Icons.person_rounded, color: AppTheme.secondaryTextColor.withOpacity(0.5)),
+              child: Icon(Icons.person_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5)),
             ),
             Positioned(
               right: 0,
@@ -164,7 +162,7 @@ class _TeamManagementScreenState extends State<TeamManagementScreen> {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: isActive ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+            color: isActive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(

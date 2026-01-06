@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import '../utils/theme.dart';
 import '../services/api_service.dart';
 import '../utils/localizations.dart';
-import 'package:provider/provider.dart';
-import '../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'face_enrollment_screen.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -67,7 +64,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Column(
         children: [
@@ -97,7 +94,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       leading: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: AppTheme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
         child: Icon(icon, color: AppTheme.primaryColor, size: 24),
       ),
       title: Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),

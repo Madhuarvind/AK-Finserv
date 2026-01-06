@@ -5,7 +5,7 @@ from extensions import db, jwt
 
 def create_app():
     app = Flask(__name__)
-    CORS(app, resources={r"/api/*": {
+    CORS(app, resources={r"/*": {
         "origins": "*", 
         "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
         "allow_headers": ["Content-Type", "Authorization"]
@@ -21,8 +21,14 @@ def create_app():
 
     from routes.auth import auth_bp
     from routes.collection import collection_bp
+    from routes.line import line_bp
+    from routes.customer import customer_bp
+    from routes.loan import loan_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(collection_bp, url_prefix='/api/collection')
+    app.register_blueprint(line_bp, url_prefix='/api/line')
+    app.register_blueprint(customer_bp, url_prefix='/api/customer')
+    app.register_blueprint(loan_bp, url_prefix='/api/loan')
 
     return app
 

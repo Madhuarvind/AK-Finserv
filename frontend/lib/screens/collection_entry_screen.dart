@@ -3,8 +3,6 @@ import 'package:geolocator/geolocator.dart';
 import '../utils/theme.dart';
 import '../services/api_service.dart';
 import '../utils/localizations.dart';
-import 'package:provider/provider.dart';
-import '../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -34,6 +32,18 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
   void initState() {
     super.initState();
     _fetchCustomers();
+    
+    // Check for pre-selected customer from arguments
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null && args is Map<String, dynamic>) {
+        setState(() {
+          _selectedCustomer = args;
+          _currentStep = 1;
+        });
+        _fetchLoans(args['id']);
+      }
+    });
   }
 
   Future<void> _fetchCustomers() async {
@@ -183,7 +193,7 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
               final isSelected = _selectedCustomer?['id'] == c['id'];
               return ListTile(
                 selected: isSelected,
-                selectedTileColor: AppTheme.primaryColor.withOpacity(0.1),
+                selectedTileColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                 leading: const CircleAvatar(child: Icon(Icons.person)),
                 title: Text(c['name'], style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                 subtitle: Text("${c['area']} • ${c['mobile']}"),

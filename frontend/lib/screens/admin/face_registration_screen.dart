@@ -157,7 +157,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                         border: Border.all(color: AppTheme.primaryColor, width: 4),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
                             blurRadius: 30,
                             spreadRadius: 5,
                           ),

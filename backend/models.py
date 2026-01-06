@@ -5,7 +5,6 @@ import enum
 class UserRole(enum.Enum):
     ADMIN = 'admin'
     FIELD_AGENT = 'field_agent'
-    MANAGER = 'manager'
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -86,11 +85,39 @@ class OTPLog(db.Model):
 class Customer(db.Model):
     __tablename__ = 'customers'
     id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.String(20), unique=True, nullable=True) # CUST-YYYY-XXXXXX
     name = db.Column(db.String(100), nullable=False)
     mobile_number = db.Column(db.String(15), unique=True, nullable=False)
     address = db.Column(db.Text, nullable=True)
     area = db.Column(db.String(100), nullable=True)
+    assigned_worker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    
+    # Lifecycle & Status
+    status = db.Column(db.String(20), default='active') # 'created', 'verified', 'active', 'inactive', 'closed'
+    
+    # Extended Profile
+    profile_image = db.Column(db.String(255), nullable=True)
+    id_proof_type = db.Column(db.String(50), nullable=True) # 'aadhaar', 'pan', 'voter_id'
+    id_proof_number = db.Column(db.String(50), nullable=True)
+    alternate_contact = db.Column(db.String(15), nullable=True)
+    family_head_name = db.Column(db.String(100), nullable=True)
+    occupation = db.Column(db.String(100), nullable=True)
+    
+    # Location
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    
+    # Locking & Version Control
+    is_locked = db.Column(db.Boolean, default=False)
+    locked_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    locked_at = db.Column(db.DateTime, nullable=True)
+    version = db.Column(db.Integer, default=1)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    worker = db.relationship('User', foreign_keys=[assigned_worker_id], backref='assigned_customers')
+    locker = db.relationship('User', foreign_keys=[locked_by])
 
 class Loan(db.Model):
     __tablename__ = 'loans'
@@ -101,6 +128,12 @@ class Loan(db.Model):
     total_installments = db.Column(db.Integer, default=100)
     pending_amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default='active')
+    
+    # Guarantor Details
+    guarantor_name = db.Column(db.String(100), nullable=True)
+    guarantor_mobile = db.Column(db.String(15), nullable=True)
+    guarantor_relation = db.Column(db.String(50), nullable=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Collection(db.Model):
@@ -108,9 +141,88 @@ class Collection(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     loan_id = db.Column(db.Integer, db.ForeignKey('loans.id'), nullable=False)
     agent_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    line_id = db.Column(db.Integer, db.ForeignKey('lines.id'), nullable=True) # Linked to a specific route
     amount = db.Column(db.Float, nullable=False)
     payment_mode = db.Column(db.String(20), default='cash')
     status = db.Column(db.String(20), default='pending')
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Line(db.Model):
+    __tablename__ = 'lines'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    area = db.Column(db.String(100), nullable=False)
+    agent_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    is_locked = db.Column(db.Boolean, default=False)
+    working_days = db.Column(db.String(50), default='Mon-Sat')
+    start_time = db.Column(db.String(10), nullable=True)
+    end_time = db.Column(db.String(10), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    customers = db.relationship('LineCustomer', backref='line', cascade="all, delete-orphan")
+    collections = db.relationship('Collection', backref='line')
+
+class LineCustomer(db.Model):
+    __tablename__ = 'line_customers'
+    id = db.Column(db.Integer, primary_key=True)
+    line_id = db.Column(db.Integer, db.ForeignKey('lines.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    sequence_order = db.Column(db.Integer, default=0)
+    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to get customer info directly    
+    customer = db.relationship('Customer', backref='loans')
+
+# Phase 3A: Production-Grade Customer Management Models
+
+class CustomerVersion(db.Model):
+    __tablename__ = 'customer_versions'
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    version_number = db.Column(db.Integer, nullable=False)
+    changed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    changes = db.Column(db.JSON)
+    reason = db.Column(db.Text)
+    
+    customer = db.relationship('Customer', backref='versions')
+    changer = db.relationship('User')
+
+class CustomerNote(db.Model):
+    __tablename__ = 'customer_notes'
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    worker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    note_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_important = db.Column(db.Boolean, default=False)
+    
+    customer = db.relationship('Customer', backref='notes')
+    worker = db.relationship('User')
+
+class CustomerDocument(db.Model):
+    __tablename__ = 'customer_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    document_type = db.Column(db.String(50), nullable=False)
+    file_path = db.Column(db.String(255), nullable=False)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    customer = db.relationship('Customer', backref='documents')
+    uploader = db.relationship('User')
+
+class CustomerSyncLog(db.Model):
+    __tablename__ = 'customer_sync_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)
+    sync_action = db.Column(db.String(50), nullable=False)
+    sync_status = db.Column(db.String(50), nullable=False)
+    device_id = db.Column(db.String(100))
+    synced_at = db.Column(db.DateTime, default=datetime.utcnow)
+    conflict_data = db.Column(db.JSON)
+    
+    customer = db.relationship('Customer', backref='sync_logs')

@@ -6,7 +6,6 @@ import '../../services/local_db_service.dart';
 import '../../utils/localizations.dart';
 import 'package:provider/provider.dart';
 import '../../services/language_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class PinLoginScreen extends StatefulWidget {
@@ -115,7 +114,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.lock_person_outlined, size: 48, color: AppTheme.primaryColor),

@@ -9,7 +9,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'user_detail_screen.dart';
 import 'add_user_wizard_screen.dart';
-import 'performance_analytics_screen.dart';
 import 'package:universal_html/html.dart' as html;
 import 'dart:io' as io;
 import 'package:path_provider/path_provider.dart';
@@ -36,7 +35,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   String _sortBy = 'name'; // name, role, created
   bool _sortAscending = true;
   int _currentPage = 0;
-  int _pageSize = 50;
+  final int _pageSize = 50;
   bool _selectionMode = false;
   Set<int> _selectedUserIds = {};
 
@@ -51,18 +50,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final token = await _storage.read(key: 'jwt_token');
     if (token != null) {
       final result = await _apiService.getUsers(token);
-      if (result is List) {
-        setState(() {
-          _users = result;
-          _applyFilters();
-          _isLoading = false;
-        });
-      } else {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.translate('server_error'))),
-        );
-      }
+      setState(() {
+        _users = result;
+        _applyFilters();
+        _isLoading = false;
+      });
     }
   }
 
@@ -79,13 +71,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         final matchesRole = _filterRole == 'all' || user['role'] == _filterRole;
         
         bool matchesStatus = true;
-        if (_filterStatus == 'active') matchesStatus = user['is_active'] == true;
-        else if (_filterStatus == 'inactive') matchesStatus = user['is_active'] == false;
+        if (_filterStatus == 'active') {
+          matchesStatus = user['is_active'] == true;
+        } else if (_filterStatus == 'inactive') matchesStatus = user['is_active'] == false;
         else if (_filterStatus == 'locked') matchesStatus = user['is_locked'] == true;
         
         bool matchesBiometric = true;
-        if (_filterBiometric == 'registered') matchesBiometric = user['has_device_bound'] == true;
-        else if (_filterBiometric == 'not_registered') matchesBiometric = user['has_device_bound'] != true;
+        if (_filterBiometric == 'registered') {
+          matchesBiometric = user['has_device_bound'] == true;
+        } else if (_filterBiometric == 'not_registered') matchesBiometric = user['has_device_bound'] != true;
         
         return matchesSearch && matchesRole && matchesStatus && matchesBiometric;
       }).toList();
@@ -388,12 +382,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.black.withOpacity(0.04)),
+                    border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withOpacity(0.5)),
+                      Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5)),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
@@ -417,7 +411,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: (_filterRole != 'all' || _filterStatus != 'all' || _filterBiometric != 'all') 
-                              ? AppTheme.primaryColor.withOpacity(0.1) 
+                              ? AppTheme.primaryColor.withValues(alpha: 0.1) 
                               : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -425,7 +419,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             Icons.tune_rounded, 
                             color: (_filterRole != 'all' || _filterStatus != 'all' || _filterBiometric != 'all') 
                               ? AppTheme.primaryColor 
-                              : AppTheme.secondaryTextColor.withOpacity(0.5), 
+                              : AppTheme.secondaryTextColor.withValues(alpha: 0.5), 
                             size: 20
                           ),
                         ),
@@ -498,13 +492,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: _selectedUserIds.contains(user['id']) 
-                            ? AppTheme.primaryColor.withOpacity(0.1) 
+                            ? AppTheme.primaryColor.withValues(alpha: 0.1) 
                             : Colors.white,
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
                             color: _selectedUserIds.contains(user['id']) 
                               ? AppTheme.primaryColor 
-                              : Colors.black.withOpacity(0.04),
+                              : Colors.black.withValues(alpha: 0.04),
                             width: _selectedUserIds.contains(user['id']) ? 2 : 1,
                           ),
                         ),
@@ -561,7 +555,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             children: [
                               if (!_selectionMode)
                                 PopupMenuButton<String>(
-                                  icon: Icon(Icons.more_vert, color: AppTheme.secondaryTextColor.withOpacity(0.5)),
+                                  icon: Icon(Icons.more_vert, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5)),
                                   onSelected: (value) {
                                     if (value == 'view') {
                                       Navigator.push(
@@ -613,11 +607,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                               if (!_selectionMode) const SizedBox(width: 4),
                               Switch(
                                 value: isActive,
-                                activeColor: AppTheme.primaryColor,
+                                activeThumbColor: AppTheme.primaryColor,
                                 onChanged: (value) => _toggleStatus(user['id'], isActive),
                               ),
                               const SizedBox(width: 4),
-                              Icon(Icons.chevron_right_rounded, color: AppTheme.secondaryTextColor.withOpacity(0.3)),
+                              Icon(Icons.chevron_right_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.3)),
                             ],
                           ),
                         ),
@@ -646,7 +640,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             leading: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(Icons.check_circle, color: Colors.green),
@@ -661,7 +655,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             leading: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
+                                color: Colors.orange.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(Icons.cancel, color: Colors.orange),
@@ -676,7 +670,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                             leading: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppTheme.errorColor.withOpacity(0.1),
+                                color: AppTheme.errorColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(Icons.delete_forever, color: AppTheme.errorColor),
@@ -765,7 +759,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Column(
         children: [
@@ -826,7 +820,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               children: [
                 _buildFilterChip(context.translate('all'), _filterRole == 'all', () => setState(() { _filterRole = 'all'; _applyFilters(); Navigator.pop(context); })),
                 _buildFilterChip(context.translate('admin'), _filterRole == 'admin', () => setState(() { _filterRole = 'admin'; _applyFilters(); Navigator.pop(context); })),
-                _buildFilterChip(context.translate('manager'), _filterRole == 'manager', () => setState(() { _filterRole = 'manager'; _applyFilters(); Navigator.pop(context); })),
                 _buildFilterChip(context.translate('field_agent'), _filterRole == 'field_agent', () => setState(() { _filterRole = 'field_agent'; _applyFilters(); Navigator.pop(context); })),
               ],
             ),
@@ -891,7 +884,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           color: isSelected ? AppTheme.primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.black.withOpacity(0.1),
+            color: isSelected ? AppTheme.primaryColor : Colors.black.withValues(alpha: 0.1),
             width: 1.5,
           ),
         ),

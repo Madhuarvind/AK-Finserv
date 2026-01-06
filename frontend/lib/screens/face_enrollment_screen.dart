@@ -3,8 +3,6 @@ import 'package:camera/camera.dart';
 import '../utils/theme.dart';
 import '../services/api_service.dart';
 import '../utils/localizations.dart';
-import 'package:provider/provider.dart';
-import '../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../main.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';

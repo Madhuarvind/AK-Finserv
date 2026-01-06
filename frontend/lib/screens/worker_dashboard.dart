@@ -7,9 +7,7 @@ import '../../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/app_drawer.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'profile_screen.dart';
-import 'security_settings_screen.dart';
-import 'admin/team_management_screen.dart';
+import 'customer/customer_list_screen.dart';
 
 class WorkerDashboard extends StatefulWidget {
   const WorkerDashboard({super.key});
@@ -75,16 +73,16 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.black.withOpacity(0.05)),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withOpacity(0.5), size: 20),
+                        Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), size: 20),
                         const SizedBox(width: 12),
                         Text(
                           'Search anything...',
-                          style: TextStyle(color: AppTheme.secondaryTextColor.withOpacity(0.5), fontSize: 14),
+                          style: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), fontSize: 14),
                         ),
                       ],
                     ),
@@ -179,14 +177,14 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 16),
@@ -209,41 +207,61 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
-      children: [
-        _buildActionItem(context.translate('qr_scan'), Icons.qr_code_scanner_rounded, Colors.orange, () {}),
-        _buildActionItem(context.translate('collection'), Icons.add_circle_outline_rounded, Colors.greenAccent, () {
-          Navigator.pushNamed(context, '/collection_entry');
+    final actions = [
+      _buildActionItem(context.translate('qr_scan'), Icons.qr_code_scanner_rounded, Colors.orange, () {}),
+      _buildActionItem(context.translate('collection'), Icons.add_circle_outline_rounded, Colors.greenAccent, () {
+        Navigator.pushNamed(context, '/collection_entry');
+      }),
+      _buildActionItem('Customers', Icons.people_alt_rounded, Colors.teal, () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerListScreen()));
+      }),
+      _buildActionItem(context.translate('my_profile'), Icons.person_outline_rounded, Colors.blue, () {
+        Navigator.pushNamed(context, '/profile');
+      }),
+      _buildActionItem(context.translate('security_hub'), Icons.security_rounded, Colors.indigoAccent, () {
+        Navigator.pushNamed(context, '/security');
+      }),
+      if (_role == 'admin') ...[
+        _buildActionItem(context.translate('my_team'), Icons.groups_rounded, Colors.green, () {
+          Navigator.pushNamed(context, '/admin/team');
         }),
-        _buildActionItem(context.translate('expense'), Icons.receipt_long_rounded, Colors.pinkAccent, () {}),
-        _buildActionItem(context.translate('my_profile'), Icons.person_outline_rounded, Colors.blue, () {
-          Navigator.pushNamed(context, '/profile');
+        _buildActionItem(context.translate('review'), Icons.fact_check_rounded, Colors.purpleAccent, () {
+          Navigator.pushNamed(context, '/admin/review');
         }),
-        _buildActionItem(context.translate('security_hub'), Icons.security_rounded, Colors.indigoAccent, () {
-          Navigator.pushNamed(context, '/security');
+      ] else
+        _buildActionItem(context.translate('daily_route'), Icons.map_rounded, Colors.purpleAccent, () {
+          Navigator.pushNamed(context, '/agent/lines');
         }),
-        if (_role == 'manager')
-          _buildActionItem(context.translate('my_team'), Icons.groups_rounded, Colors.green, () {
-            Navigator.pushNamed(context, '/admin/team');
-          })
-        else
-          _buildActionItem(context.translate('reports'), Icons.bar_chart_rounded, Colors.purpleAccent, () {}),
-      ],
-    );
+    ];
+
+    List<Widget> rows = [];
+    for (int i = 0; i < actions.length; i += 2) {
+      rows.add(
+        Row(
+          children: [
+            Expanded(child: actions[i]),
+            if (i + 1 < actions.length) ...[
+              const SizedBox(width: 16),
+              Expanded(child: actions[i + 1]),
+            ] else
+              const Expanded(child: SizedBox()),
+          ],
+        ),
+      );
+      if (i + 2 < actions.length) {
+        rows.add(const SizedBox(height: 16));
+      }
+    }
+
+    return Column(children: rows);
   }
 
   Widget _buildActionItem(String label, IconData icon, Color color, VoidCallback onTap) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Material(
         color: Colors.transparent,
@@ -275,7 +293,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,12 +305,12 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                 context.translate('recent_activity'),
                 style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
               ),
-              Icon(Icons.chevron_right_rounded, color: AppTheme.secondaryTextColor.withOpacity(0.3)),
+              Icon(Icons.chevron_right_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.3)),
             ],
           ),
           const SizedBox(height: 24),
           _buildActivityTile('Collected from John Doe', '10 mins ago', '₹ 1,200', Colors.green),
-          Divider(color: Colors.black.withOpacity(0.05), height: 32),
+          Divider(color: Colors.black.withValues(alpha: 0.05), height: 32),
           _buildActivityTile('Collection Failed: Madhu', '1 hour ago', '₹ 800', AppTheme.errorColor),
         ],
       ),
@@ -309,7 +327,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
             color: AppTheme.backgroundColor,
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(Icons.receipt_long_outlined, color: color.withOpacity(0.7), size: 24),
+          child: Icon(Icons.receipt_long_outlined, color: color.withValues(alpha: 0.7), size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(

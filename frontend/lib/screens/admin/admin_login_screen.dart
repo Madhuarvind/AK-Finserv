@@ -53,7 +53,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.translate('error'))),
+        SnackBar(
+          content: Text("Connection Failed: $e\nURL: ${ApiService.baseUrl}"),
+          duration: const Duration(seconds: 5),
+        ),
       );
     }
   }
@@ -79,7 +82,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppTheme.errorColor.withOpacity(0.1),
+                        color: AppTheme.errorColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.security_rounded, size: 48, color: AppTheme.errorColor),

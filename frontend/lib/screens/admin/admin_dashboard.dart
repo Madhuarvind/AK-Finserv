@@ -46,15 +46,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final token = await _apiService.getToken();
     if (token != null) {
       final result = await _apiService.getUsers(token);
-      if (result is List) {
-        setState(() {
-          _users = result;
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['msg'] ?? context.translate('failure'))),
-        );
-      }
+      setState(() {
+        _users = result;
+      });
     }
     setState(() => _isLoading = false);
   }
@@ -85,16 +79,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.black.withOpacity(0.05)),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withOpacity(0.5), size: 20),
+                        Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), size: 20),
                         const SizedBox(width: 12),
                         Text(
                           'Search anything...',
-                          style: TextStyle(color: AppTheme.secondaryTextColor.withOpacity(0.5), fontSize: 14),
+                          style: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), fontSize: 14),
                         ),
                       ],
                     ),
@@ -131,7 +125,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.3),
+                              color: AppTheme.primaryColor.withValues(alpha: 0.3),
                               blurRadius: 24,
                               offset: const Offset(0, 8),
                             ),
@@ -166,7 +160,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                       Text(
                                         'Total Balance',
                                         style: GoogleFonts.outfit(
-                                          color: Colors.black.withOpacity(0.6),
+                                          color: Colors.black.withValues(alpha: 0.6),
                                           fontWeight: FontWeight.w600,
                                           fontSize: 16,
                                         ),
@@ -208,7 +202,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             context.translate('quick_actions'),
                             style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                           ),
-                          Icon(Icons.more_horiz_rounded, color: AppTheme.secondaryTextColor.withOpacity(0.5)),
+                          Icon(Icons.more_horiz_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5)),
                         ],
                       ),
                     ),
@@ -222,6 +216,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         children: [
                           _buildModernActionTile(context, context.translate('user_management'), Icons.manage_accounts_outlined, '/admin/user_management'),
+                          const SizedBox(width: 16),
+                          _buildModernActionTile(context, context.translate('manage_customers'), Icons.people_outline, '/admin/customers'),
                           const SizedBox(width: 16),
                           _buildModernActionTile(context, context.translate('audit_logs'), Icons.assignment_outlined, '/admin/audit_logs'),
                           const SizedBox(width: 16),
@@ -247,61 +243,54 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                     ),
                     
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      itemCount: _users.take(5).length,
-                      itemBuilder: (context, index) {
-                        final user = _users[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.black.withOpacity(0.04)),
-                          ),
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: AppTheme.backgroundColor,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Icon(
-                                user['role'] == 'admin' ? Icons.shield_outlined : Icons.person_outline_rounded,
-                                color: AppTheme.secondaryTextColor,
-                              ),
+                    ..._users.take(5).map((user) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12, left: 24, right: 24),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+                        ),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppTheme.backgroundColor,
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            title: Text(
-                              user['name'] ?? user['username'] ?? 'Unknown',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            subtitle: Text(
-                              user['mobile_number'] ?? '',
-                              style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 12),
-                            ),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'Active',
-                                  style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                                Text(
-                                  'Just now',
-                                  style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 10),
-                                ),
-                              ],
+                            child: Icon(
+                              user['role'] == 'admin' ? Icons.shield_outlined : Icons.person_outline_rounded,
+                              color: AppTheme.secondaryTextColor,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                          title: Text(
+                            user['name'] ?? user['username'] ?? 'Unknown',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          subtitle: Text(
+                            user['mobile_number'] ?? '',
+                            style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 12),
+                          ),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Active',
+                                style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              Text(
+                                'Just now',
+                                style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -334,7 +323,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.black.withOpacity(0.04)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

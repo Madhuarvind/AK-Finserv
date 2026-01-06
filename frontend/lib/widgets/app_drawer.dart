@@ -59,7 +59,7 @@ class AppDrawer extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        isAdmin ? 'Administrator' : (role == 'manager' ? 'Manager' : 'Field Agent'),
+                        isAdmin ? 'Administrator' : 'Field Agent',
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: AppTheme.secondaryTextColor,
@@ -110,7 +110,7 @@ class AppDrawer extends StatelessWidget {
                     Navigator.pushNamed(context, '/security');
                   },
                 ),
-                if (role == 'manager')
+                if (isAdmin) ...[
                   _buildDrawerItem(
                     context,
                     icon: Icons.groups_rounded,
@@ -120,7 +120,15 @@ class AppDrawer extends StatelessWidget {
                       Navigator.pushNamed(context, '/admin/team');
                     },
                   ),
-                if (isAdmin) ...[
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.fact_check_rounded,
+                    label: context.translate('collection_review'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/review');
+                    },
+                  ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.people_outline_rounded,
@@ -132,11 +140,38 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context,
+                    icon: Icons.contacts_outlined,
+                    label: 'Customer Management',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/customers');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.route_outlined,
+                    label: context.translate('line_management'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/lines');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
                     icon: Icons.analytics_outlined,
                     label: context.translate('performance_analytics'),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/admin/analytics');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.account_balance_rounded,
+                    label: context.translate('financial_analytics'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/financial_stats');
                     },
                   ),
                   _buildDrawerItem(

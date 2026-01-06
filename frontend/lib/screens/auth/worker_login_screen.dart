@@ -64,7 +64,10 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
+        SnackBar(
+          content: Text("Connection Failed: $e\nURL: ${ApiService.baseUrl}"),
+          duration: const Duration(seconds: 5),
+        ),
       );
     }
   }
@@ -104,7 +107,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.person_pin_rounded, size: 48, color: AppTheme.primaryColor),

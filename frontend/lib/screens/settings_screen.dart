@@ -34,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Change application appearance language',
-                  style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
                 ),
                 const SizedBox(height: 32),
                 _buildLanguageCard(

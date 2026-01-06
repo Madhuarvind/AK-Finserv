@@ -54,6 +54,7 @@ dependencies:
   fl_chart: ^0.70.2
   geolocator: ^13.0.1
 
+  path: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

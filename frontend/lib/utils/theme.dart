@@ -20,7 +20,6 @@ class AppTheme {
       primary: primaryColor,
       secondary: accentColor,
       surface: surfaceColor,
-      background: backgroundColor,
       error: errorColor,
       onPrimary: Colors.black,
       onSurface: textColor,
@@ -74,7 +73,7 @@ class AppTheme {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: textColor,
-        side: BorderSide(color: textColor.withOpacity(0.1), width: 1.5),
+        side: BorderSide(color: textColor.withValues(alpha: 0.1), width: 1.5),
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
@@ -90,7 +89,7 @@ class AppTheme {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: Colors.black.withOpacity(0.04)),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.04)),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -98,18 +97,18 @@ class AppTheme {
       fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.05)),
+        borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),
-        borderSide: BorderSide(color: Colors.black.withOpacity(0.05)),
+        borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(24),
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
       labelStyle: const TextStyle(color: secondaryTextColor),
-      hintStyle: TextStyle(color: secondaryTextColor.withOpacity(0.5)),
+      hintStyle: TextStyle(color: secondaryTextColor.withValues(alpha: 0.5)),
       prefixIconColor: secondaryTextColor,
     ),
   );

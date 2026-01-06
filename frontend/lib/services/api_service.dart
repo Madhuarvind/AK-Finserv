@@ -7,25 +7,19 @@ import 'package:flutter/foundation.dart';
 
 class ApiService {
   // Replace with your machine's IP (e.g., 192.168.1.5) if testing on a physical device
-  static const String _serverAddress = '192.168.43.113'; 
+  static const String _serverAddress = '192.168.4.138'; 
 
   static String get baseUrl {
     if (kIsWeb) {
-      final host = Uri.base.host;
-      if (host == 'localhost' || host == '127.0.0.1') {
-        return 'http://127.0.0.1:5000/api/auth';
-      }
-      if (host.isNotEmpty && !host.startsWith('192.168.')) {
-        return 'http://$host:5000/api/auth';
-      }
-    } else if (Platform.isAndroid) {
-      // Check if running on an emulator (standard check or fallback)
-      // Usually developers use 10.0.2.2 for host localhost access
-      // For now, let's keep it simple and prioritize the server address, 
-      // but we could add a flag or check here if needed.
+      return 'http://127.0.0.1:5000/api/auth';
     }
-    
-    // Default to the known working server address for all other platforms
+    // Check non-web platforms
+    if (Platform.isWindows) {
+      return 'http://127.0.0.1:5000/api/auth';
+    }
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:5000/api/auth';
+    }
     return 'http://$_serverAddress:5000/api/auth';
   }
   final _storage = const FlutterSecureStorage();
@@ -141,7 +135,7 @@ class ApiService {
           'pin': pin,
           'device_id': deviceId
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
       print('API Error: $e');
@@ -221,7 +215,7 @@ class ApiService {
     }
   }
 
-  Future<dynamic> getUsers(String token) async {
+  Future<List<dynamic>> getUsers(String token) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/users'),
@@ -230,10 +224,13 @@ class ApiService {
           'Authorization': 'Bearer $token',
         },
       );
-      return jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
     } catch (e) {
       print('API Error: $e');
-      return {'msg': 'connection_failed'}; 
+      return []; 
     }
   }
 
@@ -524,6 +521,22 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> createCustomer(Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/customers'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
   Future<List<dynamic>> getCustomerLoans(int customerId, String token) async {
     try {
       final response = await http.get(
@@ -565,9 +578,15 @@ class ApiService {
           'longitude': longitude,
         }),
       ).timeout(const Duration(seconds: 10));
+      print('SubmitCollection Response: ${response.statusCode}');
+      print('SubmitCollection Body: ${response.body}');
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        return {'msg': 'Server Error: ${response.statusCode}', 'body': response.body};
+      }
       return jsonDecode(response.body);
     } catch (e) {
-      return {'msg': 'connection_failed'};
+      print('SubmitCollection Error: $e');
+      return {'msg': 'connection_failed: $e'};
     }
   }
 
@@ -602,6 +621,308 @@ class ApiService {
       return jsonDecode(response.body);
     } catch (e) {
       return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getFinancialStats(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/stats/financials'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  // Line Management
+  Future<Map<String, dynamic>> createLine(Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/create'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<List<dynamic>> getAllLines(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/all'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> assignLineAgent(int lineId, int agentId, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/assign-agent'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'agent_id': agentId}),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleLineLock(int lineId, String token) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/lock'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<List<dynamic>> getLineCustomers(int lineId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/customers'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> addCustomerToLine(int lineId, int customerId, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/add-customer'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'customer_id': customerId}),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> reorderLineCustomers(int lineId, List<int> order, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/reorder'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'order': order}),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+  // --- Customer Sync ---
+  Future<Map<String, dynamic>?> syncCustomers(List<Map<String, dynamic>> customers, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/sync'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'customers': customers}),
+      ).timeout(const Duration(seconds: 30));
+
+      print('Sync Response: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print('Sync error: $e');
+      return null;
+    }
+  }
+  // --- Customer Management (Admin/Online) ---
+  Future<Map<String, dynamic>> getAllCustomers({int page = 1, String search = '', String token = ''}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/list?page=$page&search=$search'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {'customers': [], 'total': 0};
+    } catch (e) {
+      print('GetAllCustomers error: $e');
+      return {'customers': [], 'total': 0};
+    }
+  }
+
+  Future<Map<String, dynamic>?> getCustomerDetail(int id, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print('GetCustomerDetail error: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> createCustomerOnline(Map<String, dynamic> customerData, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/create'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(customerData),
+      ).timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      print('Create customer online error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCustomer(int id, Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  // --- Loan Management ---
+  Future<Map<String, dynamic>> createLoan(Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/loan/create'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  // Phase 3A: Production Customer Management
+  Future<Map<String, dynamic>> updateCustomerStatus(int id, String status, String token) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id/status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'status': status}),
+      ).timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> toggleCustomerLock(int id, bool lock, String token) async {
+    try {
+      final endpoint = lock ? 'lock' : 'unlock';
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id/$endpoint'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> checkDuplicateCustomer(String name, String mobile, String area, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/check-duplicate'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'name': name,
+          'mobile_number': mobile,
+          'area': area,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'duplicates_found': false, 'count': 0, 'duplicates': []};
     }
   }
 }

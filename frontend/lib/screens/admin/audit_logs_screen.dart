@@ -96,7 +96,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                             color: AppTheme.surfaceColor,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isSuccess ? const Color(0xFF1E1E1E) : AppTheme.errorColor.withOpacity(0.2),
+                              color: isSuccess ? const Color(0xFF1E1E1E) : AppTheme.errorColor.withValues(alpha: 0.2),
                               width: 1.5,
                             ),
                           ),
@@ -107,7 +107,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: _getStatusColor(log['status']).withOpacity(0.1),
+                                color: _getStatusColor(log['status']).withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(

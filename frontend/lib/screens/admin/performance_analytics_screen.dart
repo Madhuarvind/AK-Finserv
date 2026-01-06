@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../../utils/theme.dart';
 import '../../services/api_service.dart';
 import '../../utils/localizations.dart';
-import 'package:provider/provider.dart';
-import '../../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -148,7 +146,7 @@ class _PerformanceAnalyticsScreenState extends State<PerformanceAnalyticsScreen>
             child: LinearProgressIndicator(
               value: rate / 100,
               minHeight: 12,
-              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
               valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
             ),
           ),
@@ -183,7 +181,7 @@ class _PerformanceAnalyticsScreenState extends State<PerformanceAnalyticsScreen>
               barWidth: 4,
               isStrokeCapRound: true,
               dotData: const FlDotData(show: true),
-              belowBarData: BarAreaData(show: true, color: AppTheme.primaryColor.withOpacity(0.1)),
+              belowBarData: BarAreaData(show: true, color: AppTheme.primaryColor.withValues(alpha: 0.1)),
             ),
           ],
         ),

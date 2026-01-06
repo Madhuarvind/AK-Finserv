@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/theme.dart';
 import '../../services/api_service.dart';
-import '../../utils/localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -295,7 +294,7 @@ class _AddUserWizardScreenState extends State<AddUserWizardScreen> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _selectedRole,
+            initialValue: _selectedRole,
             decoration: InputDecoration(
               labelText: 'Role',
               prefixIcon: const Icon(Icons.badge_outlined),
@@ -303,7 +302,6 @@ class _AddUserWizardScreenState extends State<AddUserWizardScreen> {
             ),
             items: const [
               DropdownMenuItem(value: 'field_agent', child: Text('Field Agent')),
-              DropdownMenuItem(value: 'manager', child: Text('Manager')),
               DropdownMenuItem(value: 'admin', child: Text('Admin')),
             ],
             onChanged: (value) {
@@ -429,7 +427,7 @@ class _AddUserWizardScreenState extends State<AddUserWizardScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

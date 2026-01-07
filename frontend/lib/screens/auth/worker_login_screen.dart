@@ -54,21 +54,25 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
           isActive: result['is_active'],
           isLocked: result['is_locked'],
         );
+        if (!mounted) return;
         
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.translate(result['msg'] ?? 'failure'))),
         );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Connection Failed: $e\nURL: ${ApiService.baseUrl}"),
-          duration: const Duration(seconds: 5),
-        ),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Connection Failed: $e\nURL: ${ApiService.baseUrl}"),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 

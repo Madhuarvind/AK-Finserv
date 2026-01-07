@@ -114,7 +114,11 @@ class _AddUserWizardScreenState extends State<AddUserWizardScreen> {
     setState(() => _isLoading = true);
     
     final token = await _storage.read(key: 'jwt_token');
-    if (token == null) return;
+    if (token == null) {
+
+      return;
+
+    }
 
     final result = await _apiService.registerWorker(
       _nameController.text.trim(),
@@ -305,7 +309,11 @@ class _AddUserWizardScreenState extends State<AddUserWizardScreen> {
               DropdownMenuItem(value: 'admin', child: Text('Admin')),
             ],
             onChanged: (value) {
-              if (value != null) setState(() => _selectedRole = value);
+              if (value != null) {
+
+                setState(() => _selectedRole = value);
+
+              }
             },
           ),
         ],

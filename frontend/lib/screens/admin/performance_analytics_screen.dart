@@ -159,7 +159,11 @@ class _PerformanceAnalyticsScreenState extends State<PerformanceAnalyticsScreen>
 
   Widget _buildLoginActivityChart() {
     final activity = List<Map<String, dynamic>>.from(_stats?['login_activity'] ?? []);
-    if (activity.isEmpty) return const SizedBox();
+    if (activity.isEmpty) {
+
+      return const SizedBox();
+
+    }
 
     return Container(
       height: 250,

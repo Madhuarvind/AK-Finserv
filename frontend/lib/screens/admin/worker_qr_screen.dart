@@ -65,7 +65,14 @@ class WorkerQrScreen extends StatelessWidget {
                       data: qrData,
                       version: QrVersions.auto,
                       size: 240.0,
-                      foregroundColor: Colors.black, // High contrast black on white for reliability
+                      eyeStyle: const QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: Colors.black,
+                      ),
+                      dataModuleStyle: const QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: Colors.black,
+                      ),
                     ),
                   ),
                 ),

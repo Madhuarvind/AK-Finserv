@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
-from models import User, OTPLog, UserRole, LoginLog, Device
+from models import User, UserRole, LoginLog, Device
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 import bcrypt
 import random
@@ -9,61 +9,7 @@ from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/send-otp', methods=['POST'])
-def send_otp():
-    data = request.get_json()
-    mobile_number = data.get('mobile_number')
-    
-    # Basic Rate Limiting: Check if OTP was requested for this mobile in the last 60 seconds
-    last_otp = OTPLog.query.filter_by(mobile_number=mobile_number).order_by(OTPLog.created_at.desc()).first()
-    if last_otp and (datetime.utcnow() - last_otp.created_at).total_seconds() < 60:
-        return jsonify({"msg": "Please wait a minute"}), 429
 
-    if not mobile_number:
-        return jsonify({"msg": "Mobile number required"}), 400
-
-    user = User.query.filter_by(mobile_number=mobile_number).first()
-    if not user:
-        return jsonify({"msg": "User not found. Contact Admin."}), 404
-
-    # Generate 4-digit OTP for simplicity
-    otp = str(random.randint(1000, 9999))
-    expires_at = datetime.utcnow() + timedelta(minutes=5)
-    
-    otp_entry = OTPLog(mobile_number=mobile_number, otp_code=otp, expires_at=expires_at)
-    db.session.add(otp_entry)
-    db.session.commit()
-    
-    # Secure Simulation: Log to file instead of returning in JSON
-    os.makedirs('logs', exist_ok=True)
-    with open('logs/sms_simulation.log', 'a', encoding='utf-8') as f:
-        f.write(f"[{datetime.utcnow()}] OTP for {mobile_number}: {otp}\n")
-    
-    return jsonify({"msg": "OTP Sent"}), 200
-
-@auth_bp.route('/verify-otp', methods=['POST'])
-def verify_otp():
-    data = request.get_json()
-    mobile_number = data.get('mobile_number')
-    otp_code = data.get('otp')
-    
-    otp_entry = OTPLog.query.filter_by(mobile_number=mobile_number, otp_code=otp_code, is_used=False).first()
-    
-    if not otp_entry or otp_entry.expires_at < datetime.utcnow():
-        return jsonify({"msg": "Invalid or expired OTP"}), 400
-
-    otp_entry.is_used = True
-    db.session.commit()
-    
-    user = User.query.filter_by(mobile_number=mobile_number).first()
-    
-    # Return a temporary token to allow setting PIN
-    access_token = create_access_token(identity=mobile_number)
-    return jsonify({
-        "msg": "OTP Verified", 
-        "access_token": access_token, 
-        "is_first_login": user.is_first_login
-    }), 200
 
 @auth_bp.route('/set-pin', methods=['POST'])
 def set_pin():
@@ -235,15 +181,20 @@ def verify_face_login():
 @auth_bp.route('/admin-login', methods=['POST'])
 def admin_login():
     data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
 
     if not username or not password:
         return jsonify({"msg": "Username and password required"}), 400
 
-    user = User.query.filter_by(username=username).first()
-    if not user or user.role != UserRole.ADMIN:
-        return jsonify({"msg": "Access Denied"}), 403
+    user = User.query.filter((User.username == username) | (User.name == username)).first()
+    if not user:
+        print(f"DEBUG: Admin login failed - User '{username}' not found in DB")
+        return jsonify({"msg": f"Access Denied: User '{username}' not found"}), 403
+        
+    if user.role != UserRole.ADMIN:
+        print(f"DEBUG: Admin login failed - User '{username}' has role {user.role}, expected {UserRole.ADMIN}")
+        return jsonify({"msg": f"Access Denied: Incorrect role {user.role}"}), 403
 
     if not user.password_hash or not bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
         # Audit failed login

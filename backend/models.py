@@ -74,13 +74,7 @@ class Device(db.Model):
     is_trusted = db.Column(db.Boolean, default=True)
     last_active = db.Column(db.DateTime, default=datetime.utcnow)
 
-class OTPLog(db.Model):
-    __tablename__ = 'otp_logs'
-    id = db.Column(db.Integer, primary_key=True)
-    mobile_number = db.Column(db.String(15), nullable=False)
-    otp_code = db.Column(db.String(6), nullable=False)
-    expires_at = db.Column(db.DateTime, nullable=False)
-    is_used = db.Column(db.Boolean, default=False)
+
 
 class Customer(db.Model):
     __tablename__ = 'customers'
@@ -122,19 +116,68 @@ class Customer(db.Model):
 class Loan(db.Model):
     __tablename__ = 'loans'
     id = db.Column(db.Integer, primary_key=True)
+    loan_id = db.Column(db.String(25), unique=True, nullable=True) # LN-YYYY-XXXXXX
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
+    principal_amount = db.Column(db.Float, nullable=False)
+    interest_type = db.Column(db.String(20), default='flat') # 'flat', 'reducing'
     interest_rate = db.Column(db.Float, default=10.0)
-    total_installments = db.Column(db.Integer, default=100)
+    tenure = db.Column(db.Integer, default=100)
+    tenure_unit = db.Column(db.String(10), default='days') # 'days', 'weeks', 'months'
+    processing_fee = db.Column(db.Float, default=0.0)
     pending_amount = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), default='active')
+    
+    status = db.Column(db.String(20), default='created') # 'created', 'approved', 'active', 'closed', 'defaulted'
+    is_locked = db.Column(db.Boolean, default=False)
+    
+    # Assignment & Lifecycle
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    approved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    assigned_worker_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     # Guarantor Details
     guarantor_name = db.Column(db.String(100), nullable=True)
     guarantor_mobile = db.Column(db.String(15), nullable=True)
     guarantor_relation = db.Column(db.String(50), nullable=True)
     
+    start_date = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    customer = db.relationship('Customer', backref=db.backref('loans', cascade="all, delete-orphan"))
+    emi_schedule = db.relationship('EMISchedule', backref='loan', cascade="all, delete-orphan")
+    audit_logs = db.relationship('LoanAuditLog', backref='loan', cascade="all, delete-orphan")
+    documents = db.relationship('LoanDocument', backref='loan', cascade="all, delete-orphan")
+
+class EMISchedule(db.Model):
+    __tablename__ = 'emi_schedule'
+    id = db.Column(db.Integer, primary_key=True)
+    loan_id = db.Column(db.Integer, db.ForeignKey('loans.id'), nullable=False)
+    emi_no = db.Column(db.Integer, nullable=False)
+    due_date = db.Column(db.DateTime, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    principal_part = db.Column(db.Float, nullable=False)
+    interest_part = db.Column(db.Float, nullable=False)
+    balance = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='pending') # 'pending', 'paid', 'overdue'
+
+class LoanAuditLog(db.Model):
+    __tablename__ = 'loan_audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    loan_id = db.Column(db.Integer, db.ForeignKey('loans.id'), nullable=False)
+    action = db.Column(db.String(100), nullable=False)
+    performed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    old_status = db.Column(db.String(20), nullable=True)
+    new_status = db.Column(db.String(20), nullable=True)
+    remarks = db.Column(db.Text, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+class LoanDocument(db.Model):
+    __tablename__ = 'loan_documents'
+    id = db.Column(db.Integer, primary_key=True)
+    loan_id = db.Column(db.Integer, db.ForeignKey('loans.id'), nullable=False)
+    doc_type = db.Column(db.String(50), nullable=False) # 'agreement', 'signature', 'id_proof'
+    file_path = db.Column(db.String(255), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Collection(db.Model):
     __tablename__ = 'collections'
@@ -174,7 +217,7 @@ class LineCustomer(db.Model):
     assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationship to get customer info directly    
-    customer = db.relationship('Customer', backref='loans')
+    customer = db.relationship('Customer', backref='line_assignments')
 
 # Phase 3A: Production-Grade Customer Management Models
 
@@ -225,4 +268,13 @@ class CustomerSyncLog(db.Model):
     synced_at = db.Column(db.DateTime, default=datetime.utcnow)
     conflict_data = db.Column(db.JSON)
     
+    
     customer = db.relationship('Customer', backref='sync_logs')
+
+class SystemSetting(db.Model):
+    __tablename__ = 'system_settings'
+    key = db.Column(db.String(50), primary_key=True)
+    value = db.Column(db.Text, nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+

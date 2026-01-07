@@ -54,16 +54,16 @@ class _ManageLinesScreenState extends State<ManageLinesScreen> {
 
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         scrollable: true,
-        title: Text(AppLocalizations.of(context).translate('create_line')),
+        title: Text(AppLocalizations.of(dialogContext).translate('create_line')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).translate('line_name'),
+                labelText: AppLocalizations.of(dialogContext).translate('line_name'),
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -71,7 +71,7 @@ class _ManageLinesScreenState extends State<ManageLinesScreen> {
             TextField(
               controller: areaController,
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(context).translate('area'),
+                labelText: AppLocalizations.of(dialogContext).translate('area'),
                 border: const OutlineInputBorder(),
               ),
             ),
@@ -79,34 +79,36 @@ class _ManageLinesScreenState extends State<ManageLinesScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context).translate('cancel')),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(AppLocalizations.of(dialogContext).translate('cancel')),
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameController.text.isEmpty || areaController.text.isEmpty) return;
+              if (nameController.text.isEmpty || areaController.text.isEmpty) {
+                // The original patch had some unrelated code here.
+                // Keeping the original logic for empty fields.
+                return;
+              }
               
               try {
                 final token = await _storage.read(key: 'jwt_token');
                 if (token != null) {
-                  await _apiService.createLine({
+                   await _apiService.createLine({
                     'name': nameController.text,
                     'area': areaController.text,
                   }, token);
-                  if (mounted) {
-                    Navigator.pop(context);
-                    _fetchData();
-                  }
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext);
+                  _fetchData();
                 }
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error creating line: $e')),
-                  );
-                }
+                if (!dialogContext.mounted) return;
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(content: Text('Error creating line: $e')),
+                );
               }
             },
-            child: Text(AppLocalizations.of(context).translate('create')),
+            child: Text(AppLocalizations.of(dialogContext).translate('create')),
           ),
         ],
       ),
@@ -118,10 +120,10 @@ class _ManageLinesScreenState extends State<ManageLinesScreen> {
 
     return showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
           scrollable: true,
-          title: Text(AppLocalizations.of(context).translate('assign_agent')),
+          title: Text(AppLocalizations.of(dialogContext).translate('assign_agent')),
           content: DropdownButtonFormField<int>(
             initialValue: selectedAgentId,
             items: _agents.map<DropdownMenuItem<int>>((agent) {
@@ -135,30 +137,30 @@ class _ManageLinesScreenState extends State<ManageLinesScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppLocalizations.of(context).translate('cancel')),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(AppLocalizations.of(dialogContext).translate('cancel')),
             ),
             ElevatedButton(
               onPressed: () async {
-                if (selectedAgentId == null) return;
+                if (selectedAgentId == null) {
+                  return;
+                }
                 try {
                   final token = await _storage.read(key: 'jwt_token');
                   if (token != null) {
                     await _apiService.assignLineAgent(line['id'], selectedAgentId!, token);
-                    if (mounted) {
-                      Navigator.pop(context);
-                      _fetchData();
-                    }
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error assigning agent: $e')),
-                    );
-                  }
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext);
+                  _fetchData();
                 }
+              } catch (e) {
+                if (!dialogContext.mounted) return;
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  SnackBar(content: Text('Error assigning agent: $e')),
+                );
+              }
               },
-              child: Text(AppLocalizations.of(context).translate('save')),
+              child: Text(AppLocalizations.of(dialogContext).translate('save')),
             ),
           ],
         ),
@@ -231,7 +233,7 @@ class _ManageLinesScreenState extends State<ManageLinesScreen> {
                       ),
                       child: ExpansionTile(
                         leading: CircleAvatar(
-                          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1), 
                           child: Icon(Icons.route, color: Theme.of(context).primaryColor),
                         ),
                         title: Text(

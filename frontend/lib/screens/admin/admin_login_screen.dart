@@ -32,13 +32,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         _usernameController.text, 
         _passwordController.text
       );
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
 
       if (result.containsKey('access_token')) {
         await _apiService.saveTokens(
           result['access_token'], 
           result['refresh_token'] ?? ''
         );
+        if (!mounted) return;
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.translate('success'))),
@@ -46,18 +49,21 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         
         Navigator.pushNamedAndRemoveUntil(context, '/admin/dashboard', (route) => false);
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.translate(result['msg'] ?? 'failure'))),
         );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Connection Failed: $e\nURL: ${ApiService.baseUrl}"),
-          duration: const Duration(seconds: 5),
-        ),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Connection Failed: $e\nURL: ${ApiService.baseUrl}"),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, User, Customer, Loan, Collection, UserRole
-from datetime import datetime
+from models import db, User, Customer, Loan, Collection, UserRole, EMISchedule, LoanAuditLog
+from datetime import datetime, timedelta
 
 collection_bp = Blueprint('collection', __name__)
 
@@ -16,10 +16,11 @@ def submit_collection():
         
     data = request.get_json()
     loan_id = data.get('loan_id')
-    amount = data.get('amount')
+    amount = float(data.get('amount'))
     payment_mode = data.get('payment_mode', 'cash')
     latitude = data.get('latitude')
     longitude = data.get('longitude')
+    created_at_str = data.get('created_at') # Client timestamp
     
     if not loan_id or amount is None:
         return jsonify({"msg": "Missing required fields"}), 400
@@ -27,25 +28,96 @@ def submit_collection():
     loan = Loan.query.get(loan_id)
     if not loan:
         return jsonify({"msg": "Loan not found"}), 404
-        
+
+    # 1. Duplicate Check (Idempotency)
+    # Check for same loan, amount, agent within last 2 minutes if no unique ID provided
+    # Or strict check if client sends a UUID (future improvement)
+    cutoff = datetime.utcnow() - timedelta(minutes=2)
+    duplicate = Collection.query.filter(
+        Collection.loan_id == loan_id,
+        Collection.amount == amount,
+        Collection.agent_id == user.id,
+        Collection.created_at >= cutoff
+    ).first()
+    
+    if duplicate:
+        print(f"Duplicate collection detected: {duplicate.id}")
+        return jsonify({
+            "msg": "Duplicate collection detected", 
+            "id": duplicate.id,
+            "status": duplicate.status
+        }), 200
+
+    # 2. Record Collection
     new_collection = Collection(
         loan_id=loan_id,
         agent_id=user.id,
-        amount=float(amount),
+        amount=amount,
         payment_mode=payment_mode,
         latitude=latitude,
         longitude=longitude,
-        status='pending'
+        status='approved' # Auto-approve for now, or 'pending' if requiring verification
     )
     
     db.session.add(new_collection)
-    db.session.commit()
     
-    return jsonify({
-        "msg": "collection_submitted_successfully", 
-        "id": new_collection.id,
-        "status": new_collection.status
-    }), 201
+    # 3. Allocating Payment to EMIs (The "Brain")
+    remaining = amount
+    emis = EMISchedule.query.filter_by(loan_id=loan_id).filter(EMISchedule.status != 'paid').order_by(EMISchedule.due_date).all()
+    
+    allocation_details = []
+    
+    for emi in emis:
+        if remaining <= 0: break
+        
+        # If emi.balance is None (legacy data), assume full amount
+        current_balance = emi.balance if emi.balance is not None else emi.amount
+        
+        check_amount = min(remaining, current_balance)
+        
+        new_balance = current_balance - check_amount
+        remaining -= check_amount
+        
+        emi.balance = new_balance
+        if new_balance <= 0.1: # Float tolerance
+            emi.status = 'paid'
+            emi.balance = 0
+        else:
+            emi.status = 'partial'
+            
+        allocation_details.append(f"EMI #{emi.emi_no}: Paid {check_amount}")
+
+    # 4. Update Loan Balance
+    loan.pending_amount = max(0, loan.pending_amount - amount)
+    
+    # Check for Loan Closure
+    if loan.pending_amount <= 10: # Small tolerance for calc errors
+        # Verify all EMIs are paid
+        all_paid = not EMISchedule.query.filter_by(loan_id=loan_id).filter(EMISchedule.status != 'paid').first()
+        if all_paid:
+            loan.status = 'closed'
+            allocation_details.append("Loan Closed")
+            
+    # 5. Audit Log
+    audit = LoanAuditLog(
+        loan_id=loan.id,
+        action='COLLECTION_RECEIVED',
+        performed_by=user.id,
+        remarks=f"Collected {amount} via {payment_mode}. " + ", ".join(allocation_details)
+    )
+    db.session.add(audit)
+
+    try:
+        db.session.commit()
+        return jsonify({
+            "msg": "collection_submitted_successfully", 
+            "id": new_collection.id,
+            "status": new_collection.status,
+            "loan_balance": loan.pending_amount
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": str(e)}), 500
 
 @collection_bp.route('/pending', methods=['GET'])
 @jwt_required()
@@ -118,9 +190,13 @@ def get_customer_loans(customer_id):
     loans = Loan.query.filter_by(customer_id=customer_id, status='active').all()
     return jsonify([{
         "id": l.id,
-        "amount": l.amount,
+        "amount": l.principal_amount,
         "pending": l.pending_amount,
-        "installments": l.total_installments
+        "installments": l.tenure,
+        "loan_id": l.loan_id,
+        "interest_rate": l.interest_rate,
+        "tenure": l.tenure,
+        "tenure_unit": l.tenure_unit
     } for l in loans]), 200
 
 @collection_bp.route('/<int:collection_id>/status', methods=['PATCH'])
@@ -188,3 +264,45 @@ def get_financial_stats():
         "agent_performance": [{"id": s[0], "name": s[1], "total": float(s[2])} for s in agent_stats],
         "mode_distribution": {s[0]: float(s[1]) for s in mode_stats}
     }), 200
+@collection_bp.route('/stats/agent', methods=['GET'])
+@jwt_required()
+def get_agent_stats():
+    identity = get_jwt_identity()
+    user = User.query.filter((User.username == identity) | (User.id == identity) | (User.mobile_number == identity)).first()
+    
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+        
+    total_collected = db.session.query(db.func.sum(Collection.amount)).filter_by(agent_id=user.id, status='approved').scalar() or 0
+    
+    # In a real app, 'goal' might come from a performance table
+    # For now, we return a mock goal or calculate based on assigned loans
+    goal = 50000.0 
+    
+    return jsonify({
+        "collected": float(total_collected),
+        "goal": goal,
+        "currency": "INR",
+        "timestamp": datetime.utcnow().isoformat()
+    }), 200
+
+@collection_bp.route('/history', methods=['GET'])
+@jwt_required()
+def get_collection_history():
+    identity = get_jwt_identity()
+    user = User.query.filter((User.username == identity) | (User.id == identity) | (User.mobile_number == identity)).first()
+    
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+        
+    # Get 10 most recent collections for this agent
+    history = Collection.query.filter_by(agent_id=user.id).order_by(Collection.created_at.desc()).limit(10).all()
+    
+    return jsonify([{
+        "id": c.id,
+        "amount": c.amount,
+        "status": c.status,
+        "time": c.created_at.isoformat(),
+        "customer_name": c.loan.customer.name if c.loan and c.loan.customer else "Unknown",
+        "payment_mode": c.payment_mode
+    } for c in history]), 200

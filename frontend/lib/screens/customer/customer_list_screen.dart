@@ -6,6 +6,7 @@ import '../../services/local_db_service.dart';
 import '../../services/api_service.dart';
 import 'add_customer_screen.dart';
 
+
 class CustomerListScreen extends StatefulWidget {
   const CustomerListScreen({super.key});
 
@@ -30,11 +31,52 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
   Future<void> _loadCustomers() async {
     setState(() => _isLoading = true);
-    final customers = await _localDb.getAllLocalCustomers();
-    setState(() {
-      _customers = customers;
-      _isLoading = false;
-    });
+    
+    // 1. Load Local (Instant)
+    var localCustomers = await _localDb.getAllLocalCustomers();
+    if (mounted) {
+      setState(() => _customers = localCustomers);
+    }
+    
+    // 2. Fetch Online (Update)
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token != null) {
+        // We use the same 'getCustomers' which hits /collection/customers or create a new one.
+        // Assuming getCustomers returns a list of backend customer objects.
+        // We'll wrap them to match the local map structure or unify them.
+        final onlineCustomers = await _apiService.getCustomers(token);
+        
+        if (onlineCustomers.isNotEmpty && mounted) {
+           // Map backend format to local format for UI consistency
+           final mappedOnline = onlineCustomers.map((c) => {
+             'id': -1, // No local ID
+             'name': c['name'],
+             'mobile_number': c['mobile_number'],
+             'area': c['area'] ?? 'Unknown',
+             'customer_id': c['customer_id'],
+             'server_id': c['id'],
+             'is_synced': 1
+           }).toList().cast<Map<String, dynamic>>();
+
+           // Merge: Prefer online, but keep local-only (unsynced) ones
+           // Simple strategy: Show Online + Unsynced Local
+           final unsyncedLocal = localCustomers.where((c) => c['is_synced'] == 0 || c['is_synced'] == false).toList();
+           
+           setState(() {
+             _customers = [...unsyncedLocal, ...mappedOnline];
+             _isLoading = false;
+           });
+           return;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching online customers: $e");
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _syncCustomers() async {
@@ -54,27 +96,26 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       // Get pending customers from local DB
       final pendingCustomers = await _localDb.getPendingCustomers();
       
-      print('=== FRONTEND SYNC DEBUG ===');
-      print('Pending customers count: ${pendingCustomers.length}');
-      print('Pending customers data: $pendingCustomers');
+      debugPrint('=== FRONTEND SYNC DEBUG ===');
+      debugPrint('Pending customers count: ${pendingCustomers.length}');
       
       if (pendingCustomers.isEmpty) {
         if (mounted) {
+          // If nothing to sync up, maybe try to sync down (refresh list)
+          _loadCustomers();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('All data is already synced!'), backgroundColor: Colors.green),
+            const SnackBar(content: Text('List refreshed!'), backgroundColor: Colors.green),
           );
         }
         return;
       }
 
-      print('Calling sync API...');
+      debugPrint('Calling sync API...');
       
       // Call sync API
       final result = await _apiService.syncCustomers(pendingCustomers, token);
       
-      print('Sync API result: $result');
-      
-      if (result != null && result['synced'] != null && result['synced'].isNotEmpty) {
+      if (result != null && result['synced'] != null) {
         // Update sync status for each customer
         final synced = result['synced'] as Map<String, dynamic>;
         
@@ -109,14 +150,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         }
       }
     } catch (e) {
-      print('Sync error: $e');
+      debugPrint('Sync error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Sync error: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
-      if (mounted) setState(() => _isSyncing = false);
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
     }
   }
 
@@ -148,7 +191,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
               itemCount: _customers.length,
               itemBuilder: (context, index) {
                 final customer = _customers[index];
-                final isSynced = customer['is_synced'] == 1;
+                // is_synced might be 1 (int) or true (bool) or just present
+                final isSynced = customer['is_synced'] == 1 || customer['is_synced'] == true;
                 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -161,14 +205,31 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         color: isSynced ? Colors.green : Colors.orange,
                       ),
                     ),
-                    title: Text(customer['name'], style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                    title: Text(customer['name'] ?? 'Unknown', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                     subtitle: Text(
-                      "${customer['area']} • ${customer['mobile_number']}\n${isSynced ? customer['customer_id'] : 'Pending Sync'}",
+                      "${customer['area'] ?? 'No Area'} • ${customer['mobile_number'] ?? ''}\n${isSynced ? (customer['customer_id'] ?? '') : 'Pending Sync'}",
                       style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
                     ),
                     trailing: isSynced 
                       ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
                       : const Icon(Icons.cloud_upload, color: Colors.orange, size: 20),
+                    onTap: () {
+                      // Navigate to detail
+                      // Requires server_id for online fetch
+                      final serverId = customer['server_id'];
+                      if (serverId != null) {
+                         Navigator.pushNamed(
+                          context, 
+                          '/admin/customer_detail', 
+                          arguments: serverId
+                        );
+                      } else {
+                         // Fallback for local-only? Currently detail screen expects ID.
+                         ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Sync required to view full profile"))
+                        );
+                      }
+                    },
                   ),
                 );
               },
@@ -203,6 +264,12 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
           ),
           const SizedBox(height: 8),
           const Text('Tap + to add a new customer', style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 16),
+           TextButton.icon(
+            onPressed: _loadCustomers,
+            icon: const Icon(Icons.refresh),
+            label: const Text("Refresh List"),
+          )
         ],
       ),
     );

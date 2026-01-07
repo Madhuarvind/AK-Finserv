@@ -46,6 +46,7 @@ class _AddAgentScreenState extends State<AddAgentScreen> {
       
       final msg = result['msg']?.toString().toLowerCase() ?? '';
       if (result.containsKey('msg') && msg.contains('successfully')) {
+        if (!mounted) return;
         int userId = result['user_id'];
         String qrToken = result['qr_token'] ?? '';
         ScaffoldMessenger.of(context).showSnackBar(
@@ -63,12 +64,15 @@ class _AddAgentScreenState extends State<AddAgentScreen> {
           },
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result['msg'] ?? context.translate('failure'))),
         );
       }
     }
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override

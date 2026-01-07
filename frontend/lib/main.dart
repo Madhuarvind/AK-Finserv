@@ -12,6 +12,7 @@ import 'screens/admin/audit_logs_screen.dart';
 import 'screens/admin/user_management_screen.dart';
 import 'screens/admin/user_detail_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/admin/master_settings_screen.dart';
 import 'screens/worker_dashboard.dart';
 import 'screens/profile_screen.dart';
 import 'screens/security_settings_screen.dart';
@@ -19,13 +20,17 @@ import 'screens/face_enrollment_screen.dart';
 import 'screens/collection_entry_screen.dart';
 import 'screens/admin/manager_review_screen.dart';
 import 'screens/admin/financial_analytics_screen.dart';
-import 'screens/admin/team_management_screen.dart';
 import 'screens/admin/performance_analytics_screen.dart';
 import 'package:camera/camera.dart';
 import 'screens/admin/manage_lines_screen.dart';
 import 'screens/admin/line_customers_screen.dart';
 import 'screens/agent_lines_screen.dart';
 import 'screens/admin/admin_customer_list_screen.dart';
+import 'screens/admin/loan_approval_screen.dart';
+import 'screens/admin/customer_detail_screen.dart';
+import 'screens/admin/reports_screen.dart';
+import 'screens/admin/risk_analytics_screen.dart';
+
 
 late List<CameraDescription> cameras;
 
@@ -35,7 +40,7 @@ Future<void> main() async {
     cameras = await availableCameras();
   } catch (e) {
     cameras = [];
-    print("Cameras not initialized: $e");
+    debugPrint("Cameras not initialized: $e");
   }
   runApp(
     MultiProvider(
@@ -106,7 +111,6 @@ class VasoolDriveApp extends StatelessWidget {
         '/collection_entry': (context) => const CollectionEntryScreen(),
         '/admin/review': (context) => const ManagerReviewScreen(),
         '/admin/financial_stats': (context) => const FinancialAnalyticsScreen(),
-        '/admin/team': (context) => const TeamManagementScreen(),
         '/admin/analytics': (context) => const PerformanceAnalyticsScreen(),
         '/admin/lines': (context) => const ManageLinesScreen(),
         '/admin/line_customers': (context) {
@@ -118,6 +122,17 @@ class VasoolDriveApp extends StatelessWidget {
         },
         '/agent/lines': (context) => const AgentLinesScreen(),
         '/admin/customers': (context) => const AdminCustomerListScreen(),
+        '/admin/loan_approvals': (context) => const LoanApprovalScreen(),
+        '/admin/reports': (context) => ReportsScreen(),
+        '/admin/master_settings': (context) => const MasterSettingsScreen(),
+        '/admin/risk_analytics': (context) => const RiskAnalyticsScreen(),
+        '/admin/customer_detail': (context) {
+           final customerId = ModalRoute.of(context)?.settings.arguments;
+           if (customerId is int) {
+             return CustomerDetailScreen(customerId: customerId);
+           }
+           return const Scaffold(body: Center(child: Text('Error: Missing customer ID')));
+        },
       },
      );
     },

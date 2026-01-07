@@ -57,15 +57,15 @@ class _LineCustomersScreenState extends State<LineCustomersScreen> {
     
     return showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
           final filtered = _allCustomers.where((c) => 
             c['name'].toLowerCase().contains(searchQuery.toLowerCase()) ||
             c['mobile_number'].contains(searchQuery)
           ).toList();
 
           return AlertDialog(
-            title: Text(AppLocalizations.of(context).translate('add_customer')),
+            title: Text(AppLocalizations.of(dialogContext).translate('add_customer')),
             content: SizedBox(
               width: double.maxFinite,
               height: 400, // Fixed height for core content stability
@@ -73,7 +73,7 @@ class _LineCustomersScreenState extends State<LineCustomersScreen> {
                 children: [
                   TextField(
                     decoration: InputDecoration(
-                      hintText: AppLocalizations.of(context).translate('search_users'),
+                      hintText: AppLocalizations.of(dialogContext).translate('search_users'),
                       prefixIcon: const Icon(Icons.search),
                       border: const OutlineInputBorder(),
                     ),
@@ -86,28 +86,29 @@ class _LineCustomersScreenState extends State<LineCustomersScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(AppLocalizations.of(context).translate('no_customers_found')),
+                                Text(AppLocalizations.of(dialogContext).translate('no_customers_found')),
                                 const SizedBox(height: 16),
                                 ElevatedButton.icon(
                                   onPressed: () async {
                                     final result = await showDialog(
-                                      context: context,
-                                      builder: (context) => const AddCustomerDialog(),
+                                      context: dialogContext,
+                                      builder: (subDialogContext) => const AddCustomerDialog(),
                                     );
                                     if (result == true) {
-                                      Navigator.pop(context);
+                                      if (!dialogContext.mounted) return;
+                                      Navigator.pop(dialogContext);
                                       _fetchData();
                                     }
                                   },
                                   icon: const Icon(Icons.person_add),
-                                  label: Text(AppLocalizations.of(context).translate('create_customer')),
+                                  label: Text(AppLocalizations.of(dialogContext).translate('create_customer')),
                                 ),
                               ],
                             ),
                           )
                         : ListView.builder(
                             itemCount: filtered.length,
-                            itemBuilder: (context, index) {
+                            itemBuilder: (itemContext, index) {
                               final cust = filtered[index];
                               return ListTile(
                                 dense: true,
@@ -119,18 +120,16 @@ class _LineCustomersScreenState extends State<LineCustomersScreen> {
                                     final token = await _storage.read(key: 'jwt_token');
                                     if (token != null) {
                                       await _apiService.addCustomerToLine(widget.line['id'], cust['id'], token);
-                                      if (mounted) {
-                                        Navigator.pop(context);
-                                        _fetchData();
-                                      }
+                                      if (!dialogContext.mounted) return;
+                                      Navigator.pop(dialogContext);
+                                      _fetchData();
                                     }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                    } catch (e) {
+                                      if (!dialogContext.mounted) return;
+                                      ScaffoldMessenger.of(dialogContext).showSnackBar(
                                         SnackBar(content: Text('Error adding customer: $e')),
                                       );
                                     }
-                                  }
                                 },
                               );
                             },
@@ -141,8 +140,8 @@ class _LineCustomersScreenState extends State<LineCustomersScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(AppLocalizations.of(context).translate('cancel')),
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(AppLocalizations.of(dialogContext).translate('cancel')),
               ),
             ],
           );

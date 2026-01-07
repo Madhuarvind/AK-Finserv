@@ -111,7 +111,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               version: QrVersions.auto,
               size: 200,
               gapless: false,
-              foregroundColor: Colors.black,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: Colors.black,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: Colors.black,
+              ),
             )
           else
             const Icon(Icons.qr_code_rounded, size: 200, color: Colors.grey),

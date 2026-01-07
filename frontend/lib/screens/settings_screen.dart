@@ -34,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   'Change application appearance language',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 14),
+                  style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 14),
                 ),
                 const SizedBox(height: 32),
                 _buildLanguageCard(
@@ -52,12 +52,31 @@ class SettingsScreen extends StatelessWidget {
                   '🇺🇸', 
                   languageProvider
                 ),
+                if (Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode == 'en' || true) // Show for now, add detailed check later
+                 _buildOptionTile(context, "System Configuration", "Master settings for interest, penalties & rules", Icons.tune, () {
+                   Navigator.pushNamed(context, '/admin/master_settings');
+                 }),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  Widget _buildOptionTile(BuildContext context, String title, String subtitle, IconData icon, VoidCallback onTap) {
+      return ListTile(
+        onTap: onTap,
+        contentPadding: EdgeInsets.zero,
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          child: Icon(icon, color: AppTheme.primaryColor),
+        ),
+        title: Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        trailing: const Icon(Icons.chevron_right),
+      );
   }
 
   Widget _buildLanguageCard(
@@ -89,7 +108,7 @@ class SettingsScreen extends StatelessWidget {
               style: GoogleFonts.outfit(
                 fontSize: 18,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppTheme.primaryColor : Colors.white,
+                color: isSelected ? AppTheme.primaryColor : AppTheme.textColor,
               ),
             ),
             const Spacer(),

@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import '../utils/localizations.dart';
 import '../utils/theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../screens/customer/customer_list_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   final String userName;
@@ -113,15 +114,6 @@ class AppDrawer extends StatelessWidget {
                 if (isAdmin) ...[
                   _buildDrawerItem(
                     context,
-                    icon: Icons.groups_rounded,
-                    label: context.translate('my_team'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, '/admin/team');
-                    },
-                  ),
-                  _buildDrawerItem(
-                    context,
                     icon: Icons.fact_check_rounded,
                     label: context.translate('collection_review'),
                     onTap: () {
@@ -181,6 +173,26 @@ class AppDrawer extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/admin/audit_logs');
+                    },
+                  ),
+                ] else ...[
+                  // Worker Specific Items
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.people_outline_rounded,
+                    label: 'Customer Management',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerListScreen()));
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.route_outlined,
+                    label: context.translate('daily_route'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/agent/lines');
                     },
                   ),
                 ],

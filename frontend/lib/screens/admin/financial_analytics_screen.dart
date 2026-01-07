@@ -112,7 +112,11 @@ class _FinancialAnalyticsScreenState extends State<FinancialAnalyticsScreen> {
 
   Widget _buildModeDistributionChart() {
     final modeData = _stats!['mode_distribution'] as Map<String, dynamic>;
-    if (modeData.isEmpty) return const Center(child: Text('No data distribution available'));
+    if (modeData.isEmpty) {
+
+      return const Center(child: Text('No data distribution available'));
+
+    }
 
     return Container(
       height: 200,

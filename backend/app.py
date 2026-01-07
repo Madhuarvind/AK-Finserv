@@ -24,11 +24,22 @@ def create_app():
     from routes.line import line_bp
     from routes.customer import customer_bp
     from routes.loan import loan_bp
+    from routes.reports import reports_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(collection_bp, url_prefix='/api/collection')
     app.register_blueprint(line_bp, url_prefix='/api/line')
     app.register_blueprint(customer_bp, url_prefix='/api/customer')
     app.register_blueprint(loan_bp, url_prefix='/api/loan')
+    app.register_blueprint(reports_bp, url_prefix='/api/reports')
+
+    from routes.settings import settings_bp
+    app.register_blueprint(settings_bp, url_prefix='/api/settings')
+
+    from routes.document import document_bp
+    app.register_blueprint(document_bp, url_prefix='/api/document')
+
+    from routes.ml import ml_bp
+    app.register_blueprint(ml_bp, url_prefix='/api/ml')
 
     return app
 

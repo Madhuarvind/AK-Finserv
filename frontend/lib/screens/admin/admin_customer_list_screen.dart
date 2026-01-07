@@ -69,7 +69,11 @@ class _AdminCustomerListScreenState extends State<AdminCustomerListScreen> {
   }
 
   void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    if (_debounce?.isActive ?? false) {
+
+      _debounce!.cancel();
+
+    }
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _loadCustomers(refresh: true);
     });

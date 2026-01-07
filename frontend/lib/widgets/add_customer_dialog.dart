@@ -61,7 +61,11 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+
+        setState(() => _isLoading = false);
+
+      }
     }
   }
 

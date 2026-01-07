@@ -5,6 +5,8 @@ import '../../utils/theme.dart';
 import '../../services/api_service.dart';
 import 'edit_customer_screen.dart';
 import 'add_loan_screen.dart';
+import 'emi_schedule_screen.dart';
+import 'loan_documents_screen.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final int customerId;
@@ -31,12 +33,21 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     setState(() => _isLoading = true);
     final token = await _storage.read(key: 'jwt_token');
     if (token != null) {
-      final data = await _apiService.getCustomerDetail(widget.customerId, token);
-      if (mounted) {
-        setState(() {
-          _customer = data;
-          _isLoading = false;
-        });
+      try {
+        final data = await _apiService.getCustomerDetail(widget.customerId, token);
+        if (mounted) {
+          setState(() {
+            _customer = data;
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
       }
     }
   }
@@ -59,7 +70,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                    context,
                    MaterialPageRoute(builder: (_) => EditCustomerScreen(customer: _customer!)),
                  );
-                 if (result == true) _fetchDetails();
+                 if (result == true) {
+                   _fetchDetails();
+                 }
                }
             },
           )
@@ -69,10 +82,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         ? const Center(child: CircularProgressIndicator())
         : _customer == null 
           ? const Center(child: Text("Error loading profile"))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
+          : RefreshIndicator(
+              onRefresh: _fetchDetails,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
                    // Profile Header
                    Container(
                      padding: const EdgeInsets.all(20),
@@ -159,9 +175,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                        ),
                      ),
                      const SizedBox(height: 20),
-                   ],
-                   
-                   // Info Cards
+                    ],
+                    
+                    // Loan Section
+                    _buildLoanSection(),
+                    const SizedBox(height: 20),
+
+                    // Info Cards
                    _buildInfoCard(Icons.phone, "Mobile", _customer!['mobile']),
                    _buildInfoCard(Icons.map, "Area", _customer!['area'] ?? "N/A"),
                    _buildInfoCard(Icons.home, "Address", _customer!['address'] ?? "N/A"),
@@ -181,7 +201,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                             context, 
                             MaterialPageRoute(builder: (_) => AddLoanScreen(customerId: widget.customerId, customerName: _customer!['name']))
                           );
-                          if (result == true) _fetchDetails();
+                          if (result == true) {
+                            _fetchDetails();
+                          }
                        },
                        icon: const Icon(Icons.monetization_on_outlined, color: Colors.white),
                        label: Text("Provide Loan", style: GoogleFonts.outfit(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
@@ -194,6 +216,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 
@@ -217,12 +240,14 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             child: Icon(icon, color: AppTheme.primaryColor),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              Text(value, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(value, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
           )
         ],
       ),
@@ -230,9 +255,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   }
 
   bool _isAdmin() {
-    // Check if current user is admin - you can get this from storage or pass it down
-    // For now, assuming we can check
-    return true; // TODO: Implement proper role check
+     // Allow both admin and workers to see these controls as they are operational field staff
+    return true; 
   }
 
   Widget _buildStatusBadge(String status) {
@@ -259,14 +283,16 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Change Customer Status'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: statuses.map((s) => RadioListTile<String>(
-            title: Text(s.toUpperCase()),
-            value: s,
-            groupValue: currentStatus,
-            onChanged: (val) => Navigator.pop(context, val),
-          )).toList(),
+        content: RadioGroup<String>(
+          groupValue: currentStatus,
+          onChanged: (val) => Navigator.pop(context, val),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: statuses.map((s) => RadioListTile<String>(
+              title: Text(s.toUpperCase()),
+              value: s,
+            )).toList(),
+          ),
         ),
       ),
     );
@@ -311,6 +337,234 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
           );
         }
+      }
+    }
+  }
+
+  Widget _buildLoanSection() {
+    final loan = _customer!['active_loan'];
+    if (loan == null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey[50],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.1)),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.monetization_on_outlined, color: Colors.blueGrey[200], size: 40),
+            const SizedBox(height: 10),
+            Text("No Active Loan", style: GoogleFonts.outfit(color: Colors.blueGrey[400], fontWeight: FontWeight.bold)),
+            Text("This customer has no active borrowing", style: GoogleFonts.outfit(color: Colors.blueGrey[300], fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue[900]!, Colors.blue[700]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    loan['status'].toString().toUpperCase() == 'ACTIVE' ? "ACTIVE LOAN" : "APPROVED LOAN", 
+                    style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)
+                  ),
+                  Text(loan['loan_id'] ?? "ID Pending", style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              Icon(
+                loan['status'].toString().toUpperCase() == 'ACTIVE' ? Icons.verified_user : Icons.hourglass_top_rounded, 
+                color: Colors.white, 
+                size: 28
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _loanStats("Principal", "₹${loan['amount']}"),
+              _loanStats("Interest", "${loan['interest_rate']}%"),
+              _loanStats("Tenure", "${loan['tenure']} ${loan['tenure_unit']}"),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              if (loan['status'].toString().toLowerCase() == 'approved')
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.greenAccent[400],
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => _activateLoan(loan['id']),
+                      child: const Text("ACTIVATE", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              if (loan['status'].toString().toLowerCase() == 'active')
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => _forecloseLoan(loan['id']),
+                      child: const Text("FORECLOSE", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.blue[900],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => _viewSchedule(loan['id']),
+                  child: const Text("View EMI", style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange[100],
+                    foregroundColor: Colors.orange[900],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () => _viewDocuments(loan['id'], loan['loan_id']),
+                  child: const Text("Documents", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _loanStats(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 11)),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+      ],
+    );
+  }
+
+  void _viewSchedule(int loanId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EMIScheduleScreen(loanId: loanId)),
+    );
+  }
+
+  void _viewDocuments(int loanId, String loanNumber) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => LoanDocumentsScreen(loanId: loanId, loanNumber: loanNumber)),
+    );
+  }
+
+  Future<void> _activateLoan(int loanId) async {
+    final token = await _storage.read(key: 'jwt_token');
+    if (token != null) {
+      try {
+        await _apiService.activateLoan(loanId, token);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Loan Activated successfully!'), backgroundColor: Colors.green),
+          );
+          _fetchDetails();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _forecloseLoan(int loanId) async {
+    final amountCtrl = TextEditingController();
+    final reasonCtrl = TextEditingController();
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Foreclose / Settle Loan"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min, 
+          children: [
+            const Text("Enter the final settlement amount received from customer."),
+            const SizedBox(height: 10),
+            TextField(
+              controller: amountCtrl, 
+              decoration: const InputDecoration(labelText: "Settlement Amount (₹)", border: OutlineInputBorder()), 
+              keyboardType: TextInputType.number
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: reasonCtrl, 
+              decoration: const InputDecoration(labelText: "Reason", border: OutlineInputBorder())
+            ),
+          ]
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("CANCEL")),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white), 
+            child: const Text("FORECLOSE")
+          ),
+        ],
+      )
+    );
+    
+    if (confirmed == true && amountCtrl.text.isNotEmpty) {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token != null) {
+          try {
+            final res = await _apiService.forecloseLoan(loanId, double.tryParse(amountCtrl.text) ?? 0.0, reasonCtrl.text, token);
+            if (mounted) {
+               if (res.containsKey('msg') && res['msg'].toString().contains('successfully')) {
+                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Loan Foreclosed!"), backgroundColor: Colors.green));
+                 _fetchDetails();
+               } else {
+                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed: ${res['msg']}"), backgroundColor: Colors.red));
+               }
+            }
+          } catch (e) {
+             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red));
+          }
       }
     }
   }

@@ -8,6 +8,7 @@ import '../../services/local_db_service.dart';
 import '../../services/api_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+
 class AddCustomerScreen extends StatefulWidget {
   const AddCustomerScreen({super.key});
 
@@ -61,7 +62,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       }
       
       if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
-        Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        Position position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        );
         setState(() {
           _currentPosition = position;
           _locationMessage = "Lat: ${position.latitude.toStringAsFixed(4)}, Long: ${position.longitude.toStringAsFixed(4)}";
@@ -77,7 +80,11 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   }
 
   Future<void> _saveCustomer() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+
+      return;
+
+    }
 
     setState(() => _isLoading = true);
 
@@ -87,7 +94,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       
       if (isWeb) {
         // WEB: Save directly to backend
-        print('Running on WEB - saving directly to backend');
+        debugPrint('Running on WEB - saving directly to backend');
         final token = await _storage.read(key: 'jwt_token');
         if (token == null) {
           throw Exception('No auth token');
@@ -118,7 +125,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         }
       } else {
         // MOBILE: Save to local DB (offline-first)
-        print('Running on MOBILE - saving to local DB');
+        debugPrint('Running on MOBILE - saving to local DB');
         final customerData = {
           'name': _nameController.text.trim(),
           'mobile_number': _mobileController.text.trim(),
@@ -148,7 +155,11 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+
+        setState(() => _isLoading = false);
+
+      }
     }
   }
 

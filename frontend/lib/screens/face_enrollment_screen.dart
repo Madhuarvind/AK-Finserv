@@ -28,7 +28,11 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   }
 
   Future<void> _initializeCamera() async {
-    if (cameras.isEmpty) return;
+    if (cameras.isEmpty) {
+
+      return;
+
+    }
     
     // Find front camera
     CameraDescription? frontCamera;
@@ -60,7 +64,11 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   }
 
   Future<void> _takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized || _isProcessing) return;
+    if (_controller == null || !_controller!.value.isInitialized || _isProcessing) {
+
+      return;
+
+    }
 
     setState(() => _isProcessing = true);
     
@@ -68,13 +76,18 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       final image = await _controller!.takePicture();
       setState(() => _imageFile = image);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Capture Error: $e")));
       setState(() => _isProcessing = false);
     }
   }
 
   Future<void> _uploadFace() async {
-    if (_imageFile == null) return;
+    if (_imageFile == null) {
+
+      return;
+
+    }
     
     setState(() => _isProcessing = true);
     
@@ -101,9 +114,14 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload Error: $e")));
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) {
+
+        setState(() => _isProcessing = false);
+
+      }
     }
   }
 

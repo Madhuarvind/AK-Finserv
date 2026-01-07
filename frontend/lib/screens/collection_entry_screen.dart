@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../utils/theme.dart';
 import '../services/api_service.dart';
+import '../services/local_db_service.dart';
+import '../services/sync_service.dart';
 import '../utils/localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -75,15 +77,29 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
+    if (!serviceEnabled) {
+
+      return;
+
+    }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
+      if (permission == LocationPermission.denied) {
+
+        return;
+
+      }
     }
     
-    if (permission == LocationPermission.deniedForever) return;
+    if (permission == LocationPermission.deniedForever) {
+
+    
+      return;
+
+    
+    }
 
     final pos = await Geolocator.getCurrentPosition();
     setState(() => _currentPosition = pos);
@@ -93,31 +109,40 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
     if (_selectedLoan == null || _amountController.text.isEmpty) return;
     
     setState(() => _isLoading = true);
-    await _getCurrentLocation(); // Capture location at submission
+    await _getCurrentLocation(); 
     
-    final token = await _storage.read(key: 'jwt_token');
-    if (token != null) {
-      final result = await _apiService.submitCollection(
-        loanId: _selectedLoan!['id'],
-        amount: double.parse(_amountController.text),
-        paymentMode: _paymentMode,
-        latitude: _currentPosition?.latitude,
-        longitude: _currentPosition?.longitude,
-        token: token,
-      );
+    final collectionData = {
+      'loan_id': _selectedLoan!['id'],
+      'customer_id': _selectedCustomer != null ? _selectedCustomer!['id'] : null,
+      'amount': double.parse(_amountController.text),
+      'payment_mode': _paymentMode,
+      'latitude': _currentPosition?.latitude,
+      'longitude': _currentPosition?.longitude,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      // 1. Save Locally
+      final LocalDbService localDb = LocalDbService();
+      await localDb.addCollectionLocally(collectionData);
+      
+      // 2. Trigger Sync (Fire & Forget)
+      final SyncService syncService = SyncService();
+      syncService.syncCollections(); // Don't await, let it run in background
 
       if (mounted) {
         setState(() => _isLoading = false);
-        if (result.containsKey('msg') && result['msg'] == 'collection_submitted_successfully') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Collection submitted successfully!'), backgroundColor: Colors.green),
-          );
-          Navigator.pop(context, true);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['msg'] ?? 'Submission failed'), backgroundColor: Colors.red),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('Collection saved! Syncing in background...'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving collection: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -147,7 +172,11 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
                 }
               },
               onStepCancel: () {
-                if (_currentStep > 0) setState(() => _currentStep--);
+                if (_currentStep > 0) {
+
+                  setState(() => _currentStep--);
+
+                }
               },
               steps: [
                 Step(
@@ -189,14 +218,16 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
           child: ListView.builder(
             itemCount: _customers.length,
             itemBuilder: (context, index) {
-              final c = _customers[index];
+              final item = _customers[index];
+              if (item is! Map) return const SizedBox.shrink();
+              final c = item as Map<String, dynamic>;
               final isSelected = _selectedCustomer?['id'] == c['id'];
               return ListTile(
                 selected: isSelected,
                 selectedTileColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                 leading: const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(c['name'], style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-                subtitle: Text("${c['area']} • ${c['mobile']}"),
+                title: Text(c['name'] ?? 'Unknown', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                subtitle: Text("${c['area'] ?? ''} • ${c['mobile'] ?? ''}"),
                 onTap: () => setState(() => _selectedCustomer = c),
                 trailing: isSelected ? const Icon(Icons.check_circle, color: AppTheme.primaryColor) : null,
               );
@@ -219,10 +250,11 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
               labelText: 'Select Loan',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            items: _loans.map((l) {
+            items: _loans.whereType<Map>().map((l) {
+              final mapLoan = l as Map<String, dynamic>;
               return DropdownMenuItem(
-                value: l as Map<String, dynamic>,
-                child: Text("Loan #${l['id']} - Bal: ₹${l['pending']}"),
+                value: mapLoan,
+                child: Text("Loan #${mapLoan['loan_id'] ?? mapLoan['id']} - Bal: ₹${mapLoan['pending'] ?? mapLoan['amount']}"),
               );
             }).toList(),
             onChanged: (val) => setState(() => _selectedLoan = val),
@@ -239,22 +271,22 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
         ),
         const SizedBox(height: 20),
         const Text('Payment Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-        Row(
-          children: [
-            Radio<String>(
-              value: 'cash',
-              groupValue: _paymentMode,
-              onChanged: (v) => setState(() => _paymentMode = v!),
-            ),
-            const Text('Cash'),
-            const SizedBox(width: 20),
-            Radio<String>(
-              value: 'upi',
-              groupValue: _paymentMode,
-              onChanged: (v) => setState(() => _paymentMode = v!),
-            ),
-            const Text('UPI'),
-          ],
+        RadioGroup<String>(
+          groupValue: _paymentMode,
+          onChanged: (v) => setState(() => _paymentMode = v!),
+          child: Row(
+            children: [
+              Radio<String>(
+                value: 'cash',
+              ),
+              const Text('Cash'),
+              const SizedBox(width: 20),
+              Radio<String>(
+                value: 'upi',
+              ),
+              const Text('UPI'),
+            ],
+          ),
         ),
       ],
     );

@@ -52,7 +52,11 @@ class _FaceCaptureWidgetState extends State<FaceCaptureWidget> {
   }
 
   Future<void> _captureAndProcess() async {
-    if (_isProcessing) return;
+    if (_isProcessing) {
+
+      return;
+
+    }
     
     setState(() => _isProcessing = true);
 

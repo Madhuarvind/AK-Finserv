@@ -27,6 +27,7 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
     // 1. Try Offline Validation first (if user has logged in before on this device)
     final offlineError = await _localDbService.verifyPinOffline(name, _pinController.text);
     if (offlineError == null) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.translate('logged_offline'))),
@@ -53,19 +54,25 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
           isActive: result['is_active'],
           isLocked: result['is_locked'],
         );
-        setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
         
+        if (!mounted) return;
         if (result['role'] == 'admin') {
           Navigator.pushNamedAndRemoveUntil(context, '/admin/dashboard', (route) => false);
         } else {
           Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
         }
       } else {
-        setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
         
         // If it was a connection error, and we already tried offline above, 
         // it means either the user is new or the offline PIN was genuinely wrong.
         if (msg.contains('connection_failed') || msg.contains('error')) {
+          if (!mounted) return;
           String displayError = context.translate(offlineError); // Show why offline failed (e.g. user not found)
           if (result.containsKey('details')) {
             displayError += "\nDetails: ${result['details']}";
@@ -74,17 +81,22 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
             SnackBar(content: Text(displayError)),
           );
         } else {
-          _pinController.clear();
+          if (mounted) {
+            _pinController.clear();
+          }
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.translate(result['msg'] ?? 'invalid_pin'))),
           );
         }
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 

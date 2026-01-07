@@ -40,8 +40,16 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
   }
 
   Color _getStatusColor(String status) {
-    if (status == 'success') return Colors.green;
-    if (status.startsWith('failed')) return Colors.red;
+    if (status == 'success') {
+
+      return Colors.green;
+
+    }
+    if (status.startsWith('failed')) {
+
+      return Colors.red;
+
+    }
     return Colors.orange;
   }
 

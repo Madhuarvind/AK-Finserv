@@ -63,6 +63,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         // Fetch login statistics
         _fetchLoginStats();
       } else {
+        if (!mounted) return;
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.translate('error'))),
@@ -92,7 +93,11 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
   }
 
   Future<void> _saveUser() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+
+      return;
+
+    }
 
     setState(() => _isSaving = true);
     final token = await _storage.read(key: 'jwt_token');
@@ -111,6 +116,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       setState(() => _isSaving = false);
 
       if (result.containsKey('msg')) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.translate('success'))),
         );
@@ -387,7 +393,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                                       version: QrVersions.auto,
                                       size: 200,
                                       backgroundColor: Colors.white,
-                                      foregroundColor: Colors.black,
+                                      eyeStyle: const QrEyeStyle(
+                                        eyeShape: QrEyeShape.square,
+                                        color: Colors.black,
+                                      ),
+                                      dataModuleStyle: const QrDataModuleStyle(
+                                        dataModuleShape: QrDataModuleShape.square,
+                                        color: Colors.black,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 12),
@@ -602,6 +615,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       if (token != null) {
         final result = await _apiService.resetUserPin(widget.userId, pinController.text, token);
         if (result.containsKey('msg')) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('pin_reset_success'))));
         }
       }
@@ -629,7 +643,36 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       if (token != null) {
         final result = await _apiService.clearBiometrics(widget.userId, token);
         if (result.containsKey('msg')) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('biometrics_cleared'))));
+        }
+      }
+    }
+  }
+
+  Future<void> _handleResetDevice() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.translate('reset_device_binding')),
+        content: Text(context.translate('reset_confirm_content')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.translate('cancel'))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            child: Text(context.translate('reset_device_binding'), style: const TextStyle(color: AppTheme.errorColor))
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token != null) {
+        final result = await _apiService.resetDevice(widget.userId, token);
+        if (result.containsKey('msg')) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('success'))));
         }
       }
     }

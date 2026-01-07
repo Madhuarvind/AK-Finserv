@@ -65,6 +65,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
         _imageFile = image;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -72,7 +73,11 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   }
 
   void _handleRegisterFace() async {
-    if (_imageFile == null) return;
+    if (_imageFile == null) {
+
+      return;
+
+    }
 
     setState(() => _isLoading = true);
     
@@ -91,6 +96,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
 
         final msg = result['msg']?.toString().toLowerCase() ?? '';
         if (result.containsKey('msg') && (msg.contains('success') || msg.contains('registered'))) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.translate('success'))),
           );
@@ -105,17 +111,21 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             },
           );
         } else {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.translate(result['msg'] ?? 'failure'))),
           );
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.translate('error'))),
       );
     }
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override

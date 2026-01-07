@@ -7,26 +7,30 @@ import 'package:flutter/foundation.dart';
 
 class ApiService {
   // Replace with your machine's IP (e.g., 192.168.1.5) if testing on a physical device
-  static const String _serverAddress = '192.168.4.138'; 
+  static const String _serverAddress = '192.168.104.113'; 
 
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:5000/api/auth';
+    if (kIsWeb || Platform.isWindows) {
+      return 'http://localhost:5000/api/auth';
     }
-    // Check non-web platforms
-    if (Platform.isWindows) {
-      return 'http://127.0.0.1:5000/api/auth';
-    }
+    // For Android, we use 127.0.0.1 and run "adb reverse tcp:5000 tcp:5000"
+    // This is much more reliable than Wi-Fi IPs which often change or are blocked by firewalls.
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000/api/auth';
+      return 'http://127.0.0.1:5000/api/auth';
     }
     return 'http://$_serverAddress:5000/api/auth';
   }
+
+  String get _apiBase => baseUrl.replaceFirst('/auth', '');
   final _storage = const FlutterSecureStorage();
   final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
 
   Future<String?> _getDeviceId() async {
-    if (kIsWeb) return 'web_device';
+    if (kIsWeb) {
+
+      return 'web_device';
+
+    }
     try {
       if (Platform.isAndroid) {
         AndroidDeviceInfo androidInfo = await _deviceInfo.androidInfo;
@@ -73,42 +77,18 @@ class ApiService {
   // Silent Login / Refresh Logic
   Future<bool> ensureAuthenticated() async {
     final token = await getToken();
-    if (token == null) return false;
+    if (token == null) {
+
+      return false;
+
+    }
     
     // Check if token is expired (simulated here, but real app would check JWT payload)
     // For now, we attempt to refresh if any error occurs in other calls
     return true;
   }
 
-  Future<Map<String, dynamic>> sendOtp(String mobileNumber) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/send-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile_number': mobileNumber}),
-      ).timeout(const Duration(seconds: 10));
-      print('Response Status: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-      return jsonDecode(response.body);
-    } catch (e) {
-      print('API Error: $e');
-      return {'msg': 'Error: $e'}; 
-    }
-  }
 
-  Future<Map<String, dynamic>> verifyOtp(String mobileNumber, String otp) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile_number': mobileNumber, 'otp': otp}),
-      ).timeout(const Duration(seconds: 10));
-      return jsonDecode(response.body);
-    } catch (e) {
-      print('API Error: $e');
-      return {'msg': 'connection_failed', 'details': e.toString()};
-    }
-  }
 
   Future<Map<String, dynamic>> setPin(String name, String pin) async {
     try {
@@ -119,7 +99,7 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -138,7 +118,7 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -172,7 +152,7 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -193,7 +173,7 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -210,7 +190,7 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -229,7 +209,7 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return []; 
     }
   }
@@ -245,7 +225,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'};
     }
   }
@@ -262,7 +242,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'};
     }
   }
@@ -279,7 +259,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'};
     }
   }
@@ -295,7 +275,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'};
     }
   }
@@ -312,7 +292,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'};
     }
   }
@@ -328,7 +308,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'};
     }
   }
@@ -344,7 +324,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'has_biometric': false};
     }
   }
@@ -360,7 +340,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'total_logins': 0, 'failed_logins': 0};
     }
   }
@@ -375,27 +355,15 @@ class ApiService {
           'password': password
         }),
       );
-      print('AdminLogin Response: ${response.statusCode}');
+      debugPrint('AdminLogin Response: ${response.statusCode}');
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'}; 
     }
   }
 
-  Future<Map<String, dynamic>> adminVerify(String mobileNumber, String otp) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/admin-verify'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'mobile_number': mobileNumber, 'otp': otp}),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      print('API Error: $e');
-      return {'msg': 'connection_failed'}; 
-    }
-  }
+
 
   Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
     try {
@@ -408,7 +376,7 @@ class ApiService {
       );
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed'}; 
     }
   }
@@ -430,7 +398,7 @@ class ApiService {
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
-      print('API Error: $e');
+      debugPrint('API Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -449,8 +417,47 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('Audit Logs API Error: $e');
+      debugPrint('Audit Logs API Error: $e');
       return [];
+    }
+  }
+
+  Future<List<dynamic>> getLoans({String? status, required String token}) async {
+    try {
+      final url = status != null 
+          ? '$_apiBase/loan/all?status=$status' 
+          : '$_apiBase/loan/all';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+
+
+  Future<Map<String, dynamic>> forecloseLoan(int loanId, double amount, String reason, String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_apiBase/loan/$loanId/foreclose'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'settlement_amount': amount,
+          'reason': reason
+        }),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed: $e'};
     }
   }
 
@@ -487,26 +494,13 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getPerformanceStats(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/stats/performance'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token'
-        },
-      ).timeout(const Duration(seconds: 10));
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'msg': 'connection_failed'};
-    }
-  }
+
 
   // Collection & Customer Management
   Future<List<dynamic>> getCustomers(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/customers'),
+        Uri.parse('$_apiBase/collection/customers'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token'
@@ -524,7 +518,7 @@ class ApiService {
   Future<Map<String, dynamic>> createCustomer(Map<String, dynamic> data, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/customers'),
+        Uri.parse('$_apiBase/collection/customers'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -538,19 +532,23 @@ class ApiService {
   }
 
   Future<List<dynamic>> getCustomerLoans(int customerId, String token) async {
+    final url = '$_apiBase/collection/loans/$customerId';
     try {
+      debugPrint('GET $url');
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/loans/$customerId'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token'
         },
       ).timeout(const Duration(seconds: 10));
+      debugPrint('Response ${response.statusCode}');
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
       return [];
     } catch (e) {
+      debugPrint('GetCustomerLoans error at $url: $e');
       return [];
     }
   }
@@ -565,7 +563,7 @@ class ApiService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/submit'),
+        Uri.parse('$_apiBase/collection/submit'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -578,14 +576,14 @@ class ApiService {
           'longitude': longitude,
         }),
       ).timeout(const Duration(seconds: 10));
-      print('SubmitCollection Response: ${response.statusCode}');
-      print('SubmitCollection Body: ${response.body}');
+      debugPrint('SubmitCollection Response: ${response.statusCode}');
+      debugPrint('SubmitCollection Body: ${response.body}');
       if (response.statusCode != 200 && response.statusCode != 201) {
         return {'msg': 'Server Error: ${response.statusCode}', 'body': response.body};
       }
       return jsonDecode(response.body);
     } catch (e) {
-      print('SubmitCollection Error: $e');
+      debugPrint('SubmitCollection Error: $e');
       return {'msg': 'connection_failed: $e'};
     }
   }
@@ -593,7 +591,7 @@ class ApiService {
   Future<List<dynamic>> getPendingCollections(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/pending'),
+        Uri.parse('$_apiBase/collection/pending'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token'
@@ -611,7 +609,7 @@ class ApiService {
   Future<Map<String, dynamic>> updateCollectionStatus(int collectionId, String status, String token) async {
     try {
       final response = await http.patch(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/$collectionId/status'),
+        Uri.parse('$_apiBase/collection/$collectionId/status'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -624,10 +622,144 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getAgentStats(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/collection/stats/agent'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) ?? {'msg': 'empty_response'};
+      }
+      return {'msg': 'server_error', 'code': response.statusCode};
+    } catch (e) {
+      debugPrint('getAgentStats Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<List<dynamic>> getCollectionHistory(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/collection/history'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) ?? [];
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getCollectionHistory Error: $e');
+      return [];
+    }
+  }
+
   Future<Map<String, dynamic>> getFinancialStats(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/collection/stats/financials'),
+        Uri.parse('$_apiBase/collection/stats/financials'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getKPIStats(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/reports/stats/kpi'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getDailyReport(String token, {String? startDate, String? endDate}) async {
+    try {
+      String query = '';
+      if (startDate != null) query += '?start_date=$startDate';
+      if (endDate != null) query += '${query.isEmpty ? '?' : '&'}end_date=$endDate';
+      
+      final response = await http.get(
+        Uri.parse('$_apiBase/reports/daily$query'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<List<dynamic>> getOutstandingReport(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/reports/outstanding'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getOverdueReport(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/reports/risk/overdue'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> getAgentPerformanceList(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/reports/performance'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getPerformanceStats(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/stats/performance'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token'
@@ -643,7 +775,7 @@ class ApiService {
   Future<Map<String, dynamic>> createLine(Map<String, dynamic> data, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/create'),
+        Uri.parse('$_apiBase/line/create'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -659,7 +791,7 @@ class ApiService {
   Future<List<dynamic>> getAllLines(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/all'),
+        Uri.parse('$_apiBase/line/all'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token'
@@ -674,10 +806,83 @@ class ApiService {
     }
   }
 
+  // System Settings
+  Future<Map<String, dynamic>> getSystemSettings(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/settings/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  Future<Map<String, dynamic>> updateSystemSettings(Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_apiBase/settings/'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  // Document Management
+  Future<Map<String, dynamic>> uploadLoanDocument(int loanId, String filePath, String docType, String token) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$_apiBase/document/loan/$loanId/upload'));
+      request.headers['Authorization'] = 'Bearer $token';
+      request.fields['doc_type'] = docType;
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      
+      var response = await request.send().timeout(const Duration(seconds: 30));
+      var responseBody = await response.stream.bytesToString();
+      return jsonDecode(responseBody);
+    } catch (e) {
+      return {'msg': 'upload_failed', 'error': e.toString()};
+    }
+  }
+
+  Future<List<dynamic>> getLoanDocuments(int loanId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/document/loan/$loanId/documents'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getPenaltySummary(int loanId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/document/loan/$loanId/penalty-summary'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+
   Future<Map<String, dynamic>> assignLineAgent(int lineId, int agentId, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/assign-agent'),
+        Uri.parse('$_apiBase/line/$lineId/assign-agent'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -693,7 +898,7 @@ class ApiService {
   Future<Map<String, dynamic>> toggleLineLock(int lineId, String token) async {
     try {
       final response = await http.patch(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/lock'),
+        Uri.parse('$_apiBase/line/$lineId/lock'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -708,7 +913,7 @@ class ApiService {
   Future<List<dynamic>> getLineCustomers(int lineId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/customers'),
+        Uri.parse('$_apiBase/line/$lineId/customers'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token'
@@ -726,7 +931,7 @@ class ApiService {
   Future<Map<String, dynamic>> addCustomerToLine(int lineId, int customerId, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/add-customer'),
+        Uri.parse('$_apiBase/line/$lineId/add-customer'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -742,7 +947,7 @@ class ApiService {
   Future<Map<String, dynamic>> reorderLineCustomers(int lineId, List<int> order, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/line/$lineId/reorder'),
+        Uri.parse('$_apiBase/line/$lineId/reorder'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -758,7 +963,7 @@ class ApiService {
   Future<Map<String, dynamic>?> syncCustomers(List<Map<String, dynamic>> customers, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/sync'),
+        Uri.parse('$_apiBase/customer/sync'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -766,13 +971,13 @@ class ApiService {
         body: jsonEncode({'customers': customers}),
       ).timeout(const Duration(seconds: 30));
 
-      print('Sync Response: ${response.statusCode}');
+      debugPrint('Sync Response: ${response.statusCode}');
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
       return null;
     } catch (e) {
-      print('Sync error: $e');
+      debugPrint('Sync error: $e');
       return null;
     }
   }
@@ -780,7 +985,7 @@ class ApiService {
   Future<Map<String, dynamic>> getAllCustomers({int page = 1, String search = '', String token = ''}) async {
     try {
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/list?page=$page&search=$search'),
+        Uri.parse('$_apiBase/customer/list?page=$page&search=$search'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -792,27 +997,31 @@ class ApiService {
       }
       return {'customers': [], 'total': 0};
     } catch (e) {
-      print('GetAllCustomers error: $e');
+      debugPrint('GetAllCustomers error: $e');
       return {'customers': [], 'total': 0};
     }
   }
 
   Future<Map<String, dynamic>?> getCustomerDetail(int id, String token) async {
+    final url = '$_apiBase/customer/$id';
     try {
+      debugPrint('GET $url');
       final response = await http.get(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
 
+      debugPrint('Response ${response.statusCode}');
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
+      debugPrint('Error status code: ${response.statusCode} - ${response.body}');
       return null;
     } catch (e) {
-      print('GetCustomerDetail error: $e');
+      debugPrint('GetCustomerDetail error at $url: $e');
       return null;
     }
   }
@@ -820,7 +1029,7 @@ class ApiService {
   Future<Map<String, dynamic>> createCustomerOnline(Map<String, dynamic> customerData, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/create'),
+        Uri.parse('$_apiBase/customer/create'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -830,7 +1039,7 @@ class ApiService {
 
       return jsonDecode(response.body);
     } catch (e) {
-      print('Create customer online error: $e');
+      debugPrint('Create customer online error: $e');
       return {'msg': 'connection_failed'};
     }
   }
@@ -838,7 +1047,7 @@ class ApiService {
   Future<Map<String, dynamic>> updateCustomer(int id, Map<String, dynamic> data, String token) async {
     try {
       final response = await http.put(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id'),
+        Uri.parse('$_apiBase/customer/$id'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -854,16 +1063,63 @@ class ApiService {
 
   // --- Loan Management ---
   Future<Map<String, dynamic>> createLoan(Map<String, dynamic> data, String token) async {
+    final url = '$_apiBase/loan/create';
     try {
+      debugPrint('POST $url');
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/loan/create'),
+        Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode(data),
       ).timeout(const Duration(seconds: 10));
+      
+      debugPrint('Response ${response.statusCode}: ${response.body}');
+      return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('CreateLoan Error at $url: $e');
+      return {'msg': 'connection_failed', 'details': e.toString()};
+    }
+  }
 
+  Future<Map<String, dynamic>> approveLoan(int id, Map<String, dynamic> data, String token) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$_apiBase/loan/$id/approve'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> activateLoan(int id, String token) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$_apiBase/loan/$id/activate'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getLoanDetails(int id, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/loan/$id'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
       return {'msg': 'connection_failed'};
@@ -874,7 +1130,7 @@ class ApiService {
   Future<Map<String, dynamic>> updateCustomerStatus(int id, String status, String token) async {
     try {
       final response = await http.put(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id/status'),
+        Uri.parse('$_apiBase/customer/$id/status'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -892,7 +1148,7 @@ class ApiService {
     try {
       final endpoint = lock ? 'lock' : 'unlock';
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/$id/$endpoint'),
+        Uri.parse('$_apiBase/customer/$id/$endpoint'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -908,7 +1164,7 @@ class ApiService {
   Future<Map<String, dynamic>> checkDuplicateCustomer(String name, String mobile, String area, String token) async {
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl.replaceFirst('/auth', '')}/customer/check-duplicate'),
+        Uri.parse('$_apiBase/customer/check-duplicate'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, User, Customer, UserRole, CustomerVersion, CustomerNote
+from models import db, User, Customer, UserRole, CustomerVersion, CustomerNote, Loan
 from datetime import datetime
 import uuid
 
@@ -135,6 +135,7 @@ def create_customer_online():
             id_proof_number=data.get('id_proof_number'),
             latitude=data.get('latitude'),
             longitude=data.get('longitude'),
+            profile_image=data.get('profile_image'),
             status='active',
             created_at=datetime.utcnow()
         )
@@ -208,13 +209,30 @@ def list_customers():
 @jwt_required()
 def get_customer_detail(id):
     customer = Customer.query.get_or_404(id)
+    customer_loans = Loan.query.filter_by(customer_id=id).all()
     
     loans = [{
         "id": l.id,
-        "amount": l.amount,
+        "amount": l.principal_amount,
         "status": l.status,
-        "pending_amount": l.pending_amount
-    } for l in customer.loans] if hasattr(customer, 'loans') else []
+        "pending_amount": l.pending_amount,
+        "loan_id": l.loan_id
+    } for l in customer_loans]
+
+    # Prioritize 'active' loan, then 'approved' loan for the dashboard spotlight
+    active_loan_obj = next((l for l in customer_loans if l.status == 'active'), None)
+    if not active_loan_obj:
+        active_loan_obj = next((l for l in customer_loans if l.status == 'approved'), None)
+    
+    active_loan = {
+        "id": active_loan_obj.id,
+        "loan_id": active_loan_obj.loan_id,
+        "amount": active_loan_obj.principal_amount,
+        "interest_rate": active_loan_obj.interest_rate,
+        "tenure": active_loan_obj.tenure,
+        "tenure_unit": active_loan_obj.tenure_unit,
+        "status": active_loan_obj.status
+    } if active_loan_obj else None
 
     return jsonify({
         "id": customer.id,
@@ -236,7 +254,8 @@ def get_customer_detail(id):
         "is_locked": customer.is_locked,
         "version": customer.version,
         "created_at": customer.created_at.isoformat(),
-        "loans": loans
+        "loans": loans,
+        "active_loan": active_loan
     }), 200
 
 @customer_bp.route('/<int:id>', methods=['PUT'])
@@ -259,6 +278,7 @@ def update_customer(id):
     if 'assigned_worker_id' in data: customer.assigned_worker_id = data['assigned_worker_id']
     if 'latitude' in data: customer.latitude = data['latitude']
     if 'longitude' in data: customer.longitude = data['longitude']
+    if 'profile_image' in data: customer.profile_image = data['profile_image']
 
     try:
         db.session.commit()

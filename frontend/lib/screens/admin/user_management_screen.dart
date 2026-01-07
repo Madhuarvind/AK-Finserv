@@ -34,8 +34,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   String _filterBiometric = 'all'; // all, registered, not_registered
   String _sortBy = 'name'; // name, role, created
   bool _sortAscending = true;
-  int _currentPage = 0;
-  final int _pageSize = 50;
   bool _selectionMode = false;
   Set<int> _selectedUserIds = {};
 
@@ -46,7 +44,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   Future<void> _fetchUsers() async {
-    if (_users.isEmpty) setState(() => _isLoading = true);
+    if (_users.isEmpty) {
+
+      setState(() => _isLoading = true);
+
+    }
     final token = await _storage.read(key: 'jwt_token');
     if (token != null) {
       final result = await _apiService.getUsers(token);
@@ -73,13 +75,20 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         bool matchesStatus = true;
         if (_filterStatus == 'active') {
           matchesStatus = user['is_active'] == true;
-        } else if (_filterStatus == 'inactive') matchesStatus = user['is_active'] == false;
-        else if (_filterStatus == 'locked') matchesStatus = user['is_locked'] == true;
+        } else if (_filterStatus == 'inactive') {
+          matchesStatus = user['is_active'] == false;
+        } else {
+
+          if (_filterStatus == 'locked') matchesStatus = user['is_locked'] == true;
+
+        }
         
         bool matchesBiometric = true;
         if (_filterBiometric == 'registered') {
           matchesBiometric = user['has_device_bound'] == true;
-        } else if (_filterBiometric == 'not_registered') matchesBiometric = user['has_device_bound'] != true;
+        } else if (_filterBiometric == 'not_registered') {
+          matchesBiometric = user['has_device_bound'] != true;
+        }
         
         return matchesSearch && matchesRole && matchesStatus && matchesBiometric;
       }).toList();
@@ -98,7 +107,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       });
       
       // Reset to first page after filtering
-      _currentPage = 0;
     });
   }
 
@@ -150,7 +158,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     setState(() {
       if (_selectedUserIds.contains(userId)) {
         _selectedUserIds.remove(userId);
-        if (_selectedUserIds.isEmpty) _selectionMode = false;
+        if (_selectedUserIds.isEmpty) {
+
+          _selectionMode = false;
+
+        }
       } else {
         _selectedUserIds.add(userId);
       }
@@ -171,7 +183,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Future<void> _bulkActivate() async {
     final token = await _storage.read(key: 'jwt_token');
-    if (token == null) return;
+    if (token == null) {
+
+      return;
+
+    }
     
     for (int userId in _selectedUserIds) {
       await _apiService.patchUserStatus(userId, {'is_active': true}, token);
@@ -191,7 +207,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Future<void> _bulkDeactivate() async {
     final token = await _storage.read(key: 'jwt_token');
-    if (token == null) return;
+    if (token == null) {
+
+      return;
+
+    }
     
     for (int userId in _selectedUserIds) {
       await _apiService.patchUserStatus(userId, {'is_active': false}, token);
@@ -229,10 +249,20 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       ),
     );
 
-    if (confirmed != true) return;
+    if (confirmed != true) {
+
+
+      return;
+
+
+    }
 
     final token = await _storage.read(key: 'jwt_token');
-    if (token == null) return;
+    if (token == null) {
+
+      return;
+
+    }
     
     for (int userId in _selectedUserIds) {
       await _apiService.deleteUser(userId, token);
@@ -277,7 +307,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (kIsWeb) {
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
+        html.AnchorElement(href: url)
           ..setAttribute('download', 'users_export_${DateTime.now().millisecondsSinceEpoch}.csv')
           ..click();
         html.Url.revokeObjectUrl(url);
@@ -513,7 +543,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                   builder: (context) => UserDetailScreen(userId: user['id']),
                                 ),
                               );
-                              if (result == true) _fetchUsers();
+                              if (result == true) {
+
+                                _fetchUsers();
+
+                              }
                             }
                           },
                           onLongPress: () {
@@ -696,7 +730,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     context,
                     MaterialPageRoute(builder: (context) => const AddUserWizardScreen()),
                   );
-                  if (result == true) _fetchUsers();
+                  if (result == true) {
+
+                    _fetchUsers();
+
+                  }
                 },
                 icon: const Icon(Icons.person_add_rounded),
                 label: Text(context.translate('add_worker')),

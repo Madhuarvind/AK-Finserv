@@ -57,6 +57,9 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
         if (!mounted) return;
         
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      } else if (result['msg'] == 'requires_face_verification') {
+        if (!mounted) return;
+        Navigator.pushNamed(context, '/verify_face', arguments: name);
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,6 +137,7 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                     const SizedBox(height: 48),
                     TextField(
                       controller: _nameController,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                       decoration: InputDecoration(
                         labelText: context.translate('worker_name'),
@@ -144,6 +148,8 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                     TextField(
                       controller: _pinController,
                       obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleLogin(),
                       keyboardType: TextInputType.number,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 8, color: AppTheme.textColor),
                       decoration: InputDecoration(

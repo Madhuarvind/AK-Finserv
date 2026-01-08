@@ -5,7 +5,7 @@ import '../main.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FaceCaptureWidget extends StatefulWidget {
-  final Function(List<double>) onFaceCaptured;
+  final Function(dynamic) onFaceCaptured;
   final VoidCallback onCancel;
 
   const FaceCaptureWidget({
@@ -61,14 +61,10 @@ class _FaceCaptureWidgetState extends State<FaceCaptureWidget> {
     setState(() => _isProcessing = true);
 
     try {
-      await _initializeControllerFuture;
-      await _controller!.takePicture();
+      final image = await _controller!.takePicture();
+      final bytes = await image.readAsBytes();
       
-      // Simulate embedding extraction (in production, use ML model)
-      // For MVP, we'll generate a dummy embedding based on image properties
-      List<double> dummyEmbedding = List.generate(128, (index) => 0.5);
-      
-      widget.onFaceCaptured(dummyEmbedding);
+      widget.onFaceCaptured(bytes);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

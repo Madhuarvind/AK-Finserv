@@ -121,7 +121,7 @@ class _MasterSettingsScreenState extends State<MasterSettingsScreen> {
                        title: Text("Field Agents Can Edit Customers", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                        subtitle: const Text("Allow workers to modify customer details after creation"),
                        value: _workerCanEditCustomer,
-                       activeColor: AppTheme.primaryColor,
+                       activeThumbColor: AppTheme.primaryColor,
                        onChanged: (val) => setState(() => _workerCanEditCustomer = val),
                      )
                    ]),
@@ -159,7 +159,7 @@ class _MasterSettingsScreenState extends State<MasterSettingsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(children: children),
     );

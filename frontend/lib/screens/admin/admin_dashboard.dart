@@ -22,7 +22,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final _storage = const FlutterSecureStorage();
   
   // Real Data State
-  Map<String, dynamic>? _financialStats;
+  Map<String, dynamic> _financialStats = {};
+  Map<String, dynamic>? _aiInsights;
   List<dynamic> _recentActivity = [];
   bool _isLoading = true;
   String? _userName;
@@ -53,25 +54,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final token = await _apiService.getToken();
     if (token != null) {
       try {
-        // Fetch Financials
         final stats = await _apiService.getKPIStats(token);
-        
-        // Fetch Recent Activity (Audit Logs)
-        final logs = await _apiService.getAuditLogs(token);
+        final insights = await _apiService.getDashboardAIInsights(token);
+        final activity = await _apiService.getAuditLogs(token);
+        final name = await _storage.read(key: 'user_name');
         
         if (mounted) {
           setState(() {
             _financialStats = stats;
-            _recentActivity = logs;
+            _aiInsights = insights;
+            _recentActivity = activity;
+            _userName = name ?? 'Admin';
+            _isLoading = false;
           });
         }
       } catch (e) {
         debugPrint("Error fetching dashboard data: $e");
+        if (mounted) {
+          setState(() => _isLoading = false); // Ensure loading is false even on error
+        }
       }
-    }
-    
-    if (mounted) {
-      setState(() => _isLoading = false);
+    } else {
+      if (mounted) {
+        setState(() => _isLoading = false); // Ensure loading is false if no token
+      }
     }
   }
 
@@ -182,50 +188,59 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       // Kpi Summary Card
                       Padding(
                         padding: const EdgeInsets.all(24.0),
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppTheme.primaryColor, Color(0xFFD4FF8B)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(32),
-                            boxShadow: [
-                              BoxShadow(color: AppTheme.primaryColor.withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 8)),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('Outstanding Balance', style: GoogleFonts.outfit(color: Colors.black54, fontWeight: FontWeight.w600)),
-                                    const Icon(Icons.trending_up, color: Colors.black54),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  currencyFormatter.format(_financialStats?['outstanding_balance'] ?? 0),
-                                  style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black),
-                                ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _buildStatItem("Collected", currencyFormatter.format(_financialStats?['total_collected'] ?? 0)),
-                                    _buildStatItem("Overdue", currencyFormatter.format(_financialStats?['overdue_amount'] ?? 0), isRed: true),
-                                    _buildStatItem("Active Loans", "${_financialStats?['active_loans'] ?? 0}"),
-                                  ],
-                                ),
+                        child: GestureDetector(
+                          onTap: () => Navigator.pushNamed(context, '/admin/collection_ledger'),
+                          child: Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [AppTheme.primaryColor, Color(0xFFD4FF8B)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(32),
+                              boxShadow: [
+                                BoxShadow(color: AppTheme.primaryColor.withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 8)),
                               ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Outstanding Balance', style: GoogleFonts.outfit(color: Colors.black54, fontWeight: FontWeight.w600)),
+                                      const Icon(Icons.trending_up, color: Colors.black54),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    currencyFormatter.format(_financialStats['outstanding_balance'] ?? 0),
+                                    style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      _buildStatItem("Collected", currencyFormatter.format(_financialStats['total_collected'] ?? 0)),
+                                      _buildStatItem("Overdue", currencyFormatter.format(_financialStats['overdue_amount'] ?? 0), isRed: true),
+                                      _buildStatItem("Active Loans", "${_financialStats['active_loans'] ?? 0}"),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
+                      const SizedBox(height: 24),
+                      
+                      if (_aiInsights != null) ...[
+                        _buildAIInsightsSection(),
+                        const SizedBox(height: 32),
+                      ],
                       
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -240,7 +255,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           ],
                         ),
                       ),
-                      
                       const SizedBox(height: 16),
                       
                       SizedBox(
@@ -253,13 +267,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             const SizedBox(width: 16),
                             _buildModernActionTile(context, "Reports", Icons.bar_chart_rounded, '/admin/reports'),
                             const SizedBox(width: 16),
-                            _buildModernActionTile(context, "AI Risk", Icons.psychology_outlined, '/admin/risk_analytics'),
-                            const SizedBox(width: 16),
-                            _buildModernActionTile(context, context.translate('manage_customers'), Icons.people_outline, '/admin/customers'),
+                             _buildModernActionTile(context, "AI Risk", Icons.psychology_outlined, '/admin/risk_prediction'),
+                             const SizedBox(width: 16),
+                             _buildModernActionTile(context, "Worker AI", Icons.analytics_outlined, '/admin/worker_performance'),
+                             const SizedBox(width: 16),
+                             _buildModernActionTile(context, context.translate('manage_customers'), Icons.people_outline, '/admin/customers'),
                             const SizedBox(width: 16),
                             _buildModernActionTile(context, context.translate('audit_logs'), Icons.assignment_outlined, '/admin/audit_logs'),
                             const SizedBox(width: 16),
-                            _buildModernActionTile(context, "Loan Approvals", Icons.fact_check_outlined, '/admin/loan_approvals'),
+                             _buildModernActionTile(context, "Security", Icons.gpp_good_outlined, '/admin/security'),
+                             const SizedBox(width: 16),
+                             _buildModernActionTile(context, "Loan Approvals", Icons.fact_check_outlined, '/admin/loan_approvals'),
                             const SizedBox(width: 16),
                             _buildModernActionTile(context, context.translate('settings'), Icons.settings_outlined, '/settings'),
                           ],
@@ -360,6 +378,87 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
 
+
+  Widget _buildAIInsightsSection() {
+    final summaries = List<String>.from(_aiInsights!['ai_summaries'] ?? []);
+    final problemLoans = List<dynamic>.from(_aiInsights!['problem_loans'] ?? []);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.indigo[900]!, Colors.indigo[700]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(color: Colors.indigo.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: Colors.amber, size: 24),
+              const SizedBox(width: 12),
+              Text("AI ASSISTANT", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...summaries.map((s) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 14),
+                const SizedBox(width: 8),
+                Expanded(child: Text(s, style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4))),
+              ],
+            ),
+          )),
+          if (problemLoans.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(color: Colors.white24),
+            const SizedBox(height: 12),
+            Text("PROBLEM LOANS ALERT", style: GoogleFonts.outfit(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            ...problemLoans.take(2).map((l) => _buildProblemLoanCard(l)),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProblemLoanCard(Map<String, dynamic> loan) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(loan['customer'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+              Text("ID: ${loan['loan_id']}", style: const TextStyle(color: Colors.white70, fontSize: 10)),
+            ],
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(8)),
+            child: Text("${loan['missed']} Missed", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
+    );
+  }
 
   Widget _buildModernActionTile(BuildContext context, String title, IconData icon, String route) {
     return InkWell(

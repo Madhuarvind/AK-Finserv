@@ -21,6 +21,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   final _storage = const FlutterSecureStorage();
   
   Map<String, dynamic>? _customer;
+  Map<String, dynamic>? _riskAnalysis;
+  Map<String, dynamic>? _behaviorAnalysis;
   bool _isLoading = true;
 
   @override
@@ -35,9 +37,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     if (token != null) {
       try {
         final data = await _apiService.getCustomerDetail(widget.customerId, token);
+        final risk = await _apiService.getRiskScore(widget.customerId, token);
+        final behavior = await _apiService.getCustomerBehaviorAnalytics(widget.customerId, token);
         if (mounted) {
           setState(() {
             _customer = data;
+            _riskAnalysis = risk;
+            _behaviorAnalysis = behavior;
             _isLoading = false;
           });
         }
@@ -177,6 +183,16 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                      const SizedBox(height: 20),
                     ],
                     
+                    if (_riskAnalysis != null) ...[
+                      _buildRiskCard(),
+                      const SizedBox(height: 20),
+                    ],
+
+                    if (_behaviorAnalysis != null) ...[
+                      _buildBehaviorCard(),
+                      const SizedBox(height: 20),
+                    ],
+                    
                     // Loan Section
                     _buildLoanSection(),
                     const SizedBox(height: 20),
@@ -217,6 +233,154 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               ),
             ),
           ),
+    );
+  }
+
+
+
+  Widget _buildRiskCard() {
+    final score = _riskAnalysis!['risk_score'] ?? 0;
+    final level = _riskAnalysis!['risk_level'] ?? 'N/A';
+    final insights = List<String>.from(_riskAnalysis!['insights'] ?? []);
+    
+    Color riskColor = Colors.green;
+    if (level == 'MEDIUM') riskColor = Colors.orange;
+    if (level == 'HIGH') riskColor = Colors.red;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: riskColor.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: riskColor.withValues(alpha: 0.2), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.psychology, color: riskColor),
+                  const SizedBox(width: 8),
+                  Text("AI RISK ANALYSIS", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: riskColor, letterSpacing: 1.2, fontSize: 12)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(color: riskColor, borderRadius: BorderRadius.circular(20)),
+                child: Text(level, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+              )
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                "$score",
+                style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: riskColor),
+              ),
+              const SizedBox(width: 4),
+              Text("/100", style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey)),
+              const Spacer(),
+              SizedBox(
+                width: 100,
+                child: LinearProgressIndicator(
+                  value: score / 100,
+                  backgroundColor: Colors.grey[200],
+                  color: riskColor,
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              )
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 8),
+          ...insights.map((insight) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Icon(Icons.circle, size: 6, color: riskColor),
+                ),
+                const SizedBox(width: 8),
+                Expanded(child: Text(insight, style: TextStyle(fontSize: 13, color: Colors.blueGrey[800]))),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+
+
+  Widget _buildBehaviorCard() {
+    final segment = _behaviorAnalysis!['segment'] ?? 'N/A';
+    final reliability = _behaviorAnalysis!['reliability_score'] ?? 0;
+    final suggestion = _behaviorAnalysis!['loan_limit_suggestion'] ?? 0;
+    final observations = List<String>.from(_behaviorAnalysis!['observations'] ?? []);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text("ML BEHAVIORAL ANALYSIS", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.blue, letterSpacing: 1.2, fontSize: 12)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(10)),
+                child: Text(segment, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              )
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Reliability", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text("$reliability%", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Suggested Limit", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text("₹$suggestion", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[700])),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text("ML Insights:", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          ...observations.map((obs) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text("• $obs", style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+          )),
+        ],
+      ),
     );
   }
 

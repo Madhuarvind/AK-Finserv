@@ -196,3 +196,38 @@ def get_overdue_report():
         
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+@reports_bp.route('/work-targets', methods=['GET'])
+@jwt_required()
+def get_work_targets():
+    """Customers with EMIs due today or overdue"""
+    if not get_admin_user():
+        return jsonify({"msg": "Admin access required"}), 403
+    
+    try:
+        today = datetime.utcnow().date()
+        # Fetch EMIs due on or before today that are not paid
+        targets = db.session.query(
+            EMISchedule, Loan, Customer, User
+        ).join(Loan, EMISchedule.loan_id == Loan.id)\
+         .join(Customer, Loan.customer_id == Customer.id)\
+         .outerjoin(User, Loan.assigned_worker_id == User.id)\
+         .filter(
+            EMISchedule.status != 'paid',
+            func.date(EMISchedule.due_date) <= today
+         ).order_by(EMISchedule.due_date.asc()).all()
+         
+        report = []
+        for emi, loan, cust, agent in targets:
+            report.append({
+                "customer_name": cust.name,
+                "amount_due": emi.amount,
+                "due_date": emi.due_date.isoformat(),
+                "loan_id": loan.loan_id,
+                "area": cust.area,
+                "agent_name": agent.name if agent else "Unassigned",
+                "is_overdue": emi.due_date.date() < today
+            })
+            
+        return jsonify(report), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500

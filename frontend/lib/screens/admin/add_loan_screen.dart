@@ -150,7 +150,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
              children: [
                Text("Loan Details", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18)),
                const SizedBox(height: 15),
-               _buildField(_amountCtrl, "Loan Amount (₹)", Icons.currency_rupee, type: TextInputType.number),
+               _buildField(_amountCtrl, "Loan Amount (₹)", Icons.currency_rupee, type: TextInputType.number, textInputAction: TextInputAction.next),
                const SizedBox(height: 16),
                
                 Row(
@@ -175,7 +175,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       flex: 2,
-                      child: _buildField(_interestCtrl, "Rate %", Icons.percent, type: TextInputType.number),
+                      child: _buildField(_interestCtrl, "Rate %", Icons.percent, type: TextInputType.number, textInputAction: TextInputAction.next),
                     ),
                   ],
                 ),
@@ -186,7 +186,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: _buildField(_tenureCtrl, "Tenure", Icons.calendar_today, type: TextInputType.number),
+                      child: _buildField(_tenureCtrl, "Tenure", Icons.calendar_today, type: TextInputType.number, textInputAction: TextInputAction.next),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -209,18 +209,18 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                   ],
                 ),
                const SizedBox(height: 16),
-               _buildField(_feeCtrl, "Processing Fee (₹)", Icons.settings_suggest, type: TextInputType.number),
+               _buildField(_feeCtrl, "Processing Fee (₹)", Icons.settings_suggest, type: TextInputType.number, textInputAction: TextInputAction.next),
                
                const SizedBox(height: 30),
                const Divider(),
                const SizedBox(height: 10),
                Text("Guarantor Details", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueGrey)),
                const SizedBox(height: 15),
-               _buildField(_guarantorNameCtrl, "Guarantor Name", Icons.person_outline),
+               _buildField(_guarantorNameCtrl, "Guarantor Name", Icons.person_outline, textInputAction: TextInputAction.next),
                const SizedBox(height: 10),
-               _buildField(_guarantorMobileCtrl, "Guarantor Mobile", Icons.phone_android, type: TextInputType.phone),
+               _buildField(_guarantorMobileCtrl, "Guarantor Mobile", Icons.phone_android, type: TextInputType.phone, textInputAction: TextInputAction.next),
                const SizedBox(height: 10),
-               _buildField(_guarantorRelationCtrl, "Relation (e.g., Father)", Icons.people_outline),
+               _buildField(_guarantorRelationCtrl, "Relation (e.g., Father)", Icons.people_outline, textInputAction: TextInputAction.done, onFieldSubmitted: (_) => _createLoan()),
                
                const SizedBox(height: 40),
                SizedBox(
@@ -260,10 +260,12 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     );
   }
 
-  Widget _buildField(TextEditingController ctrl, String label, IconData icon, {TextInputType type = TextInputType.text}) {
+  Widget _buildField(TextEditingController ctrl, String label, IconData icon, {TextInputType type = TextInputType.text, TextInputAction? textInputAction, void Function(String)? onFieldSubmitted}) {
     return TextFormField(
       controller: ctrl,
       keyboardType: type,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onFieldSubmitted,
       validator: (v) => v!.isEmpty ? "Required" : null,
       decoration: InputDecoration(
         labelText: label,

@@ -25,21 +25,30 @@ def create_app():
     from routes.customer import customer_bp
     from routes.loan import loan_bp
     from routes.reports import reports_bp
+    from routes.settings import settings_bp
+    from routes.document import document_bp
+    from routes.analytics import analytics_bp
+    from routes.security import security_bp
+    from routes.interest import interest_bp
+    
+    # Pre-load face verification model
+    try:
+        from utils.face_utils import model
+        print("AI Model loaded successfully")
+    except Exception as e:
+        print(f"Error loading AI Model: {e}")
+
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(customer_bp, url_prefix='/api/customer')
     app.register_blueprint(collection_bp, url_prefix='/api/collection')
     app.register_blueprint(line_bp, url_prefix='/api/line')
-    app.register_blueprint(customer_bp, url_prefix='/api/customer')
     app.register_blueprint(loan_bp, url_prefix='/api/loan')
+    app.register_blueprint(interest_bp, url_prefix='/api/interest')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
-
-    from routes.settings import settings_bp
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
-
-    from routes.document import document_bp
     app.register_blueprint(document_bp, url_prefix='/api/document')
-
-    from routes.ml import ml_bp
-    app.register_blueprint(ml_bp, url_prefix='/api/ml')
+    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+    app.register_blueprint(security_bp, url_prefix='/api/security')
 
     return app
 

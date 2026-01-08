@@ -114,6 +114,24 @@ class AppDrawer extends StatelessWidget {
                 if (isAdmin) ...[
                   _buildDrawerItem(
                     context,
+                    icon: Icons.check_circle_outline_rounded,
+                    label: context.translate('loan_approvals'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/loan_approvals');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.content_paste_search_rounded,
+                    label: context.translate('collection_ledger'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/collection_ledger');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
                     icon: Icons.fact_check_rounded,
                     label: context.translate('collection_review'),
                     onTap: () {
@@ -150,6 +168,24 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context,
+                    icon: Icons.psychology_outlined,
+                    label: context.translate('risk_predictions'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/risk_prediction');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.assessment_outlined,
+                    label: context.translate('worker_ai_performance'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/worker_performance');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
                     icon: Icons.analytics_outlined,
                     label: context.translate('performance_analytics'),
                     onTap: () {
@@ -168,6 +204,15 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _buildDrawerItem(
                     context,
+                    icon: Icons.shield_outlined,
+                    label: context.translate('security_compliance'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, '/admin/security');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    context,
                     icon: Icons.assignment_outlined,
                     label: context.translate('audit_logs'),
                     onTap: () {
@@ -175,6 +220,15 @@ class AppDrawer extends StatelessWidget {
                       Navigator.pushNamed(context, '/admin/audit_logs');
                     },
                   ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.settings_suggest_rounded,
+                      label: context.translate('system_configuration'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/admin/master_settings');
+                      },
+                    ),
                 ] else ...[
                   // Worker Specific Items
                   _buildDrawerItem(

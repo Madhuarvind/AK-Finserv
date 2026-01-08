@@ -3,7 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import '../utils/theme.dart';
 import '../services/api_service.dart';
 import '../services/local_db_service.dart';
-import '../services/sync_service.dart';
+
 import '../utils/localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -113,7 +113,6 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
     
     final collectionData = {
       'loan_id': _selectedLoan!['id'],
-      'customer_id': _selectedCustomer != null ? _selectedCustomer!['id'] : null,
       'amount': double.parse(_amountController.text),
       'payment_mode': _paymentMode,
       'latitude': _currentPosition?.latitude,
@@ -122,29 +121,87 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
     };
 
     try {
-      // 1. Save Locally
-      final LocalDbService localDb = LocalDbService();
-      await localDb.addCollectionLocally(collectionData);
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) return;
       
-      // 2. Trigger Sync (Fire & Forget)
-      final SyncService syncService = SyncService();
-      syncService.syncCollections(); // Don't await, let it run in background
+      final result = await _apiService.submitCollection(
+        loanId: collectionData['loan_id'] as int,
+        amount: collectionData['amount'] as double,
+        paymentMode: collectionData['payment_mode'] as String,
+        latitude: collectionData['latitude'] as double?,
+        longitude: collectionData['longitude'] as double?,
+        token: token,
+      );
 
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('Collection saved! Syncing in background...'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context, true);
+        
+        if (result['status'] == 'flagged') {
+          // AI Fraud Alert
+          _showFraudWarningDialog(result['fraud_warning'] ?? ["Unknown anomaly detected"]);
+        } else if (result['msg']?.contains('success') ?? false) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Collection approved successfully!'), backgroundColor: Colors.green),
+          );
+          Navigator.pop(context, true);
+        } else {
+           ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${result['msg']}'), backgroundColor: Colors.red),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
+        // Fallback to local save if server fails
+        final LocalDbService localDb = LocalDbService();
+        await localDb.addCollectionLocally(collectionData);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving collection: $e'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Offline: Collection saved locally!'), backgroundColor: Colors.blue),
         );
+        Navigator.pop(context, true);
       }
     }
+  }
+
+  void _showFraudWarningDialog(List<dynamic> warnings) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            const SizedBox(width: 10),
+            Text("AI Security Warning", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("This collection has been flagged for Admin review due to:"),
+            const SizedBox(height: 12),
+            ...warnings.map((w) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text("• $w", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 13)),
+            )),
+            const SizedBox(height: 12),
+            const Text("You can continue, but the payment won't reflect until verified by the office.", style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
+          ElevatedButton(
+            onPressed: () {
+               Navigator.pop(context); // Close dialog
+               Navigator.pop(context, true); // Go back
+            },
+            child: const Text("I UNDERSTAND"),
+          )
+        ],
+      ),
+    );
   }
 
   @override

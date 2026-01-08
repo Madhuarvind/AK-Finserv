@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:io';
-import 'package:flutter/foundation.dart'; // For kIsWeb
 import '../../utils/theme.dart';
 import '../../services/api_service.dart';
 import '../../utils/localizations.dart';
@@ -32,6 +32,7 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
   XFile? _imageFile;
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
+  String? _statusMessage;
 
   @override
   void initState() {
@@ -79,27 +80,33 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
 
     }
 
-    setState(() => _isLoading = true);
-    
-    // Simulate embedding extracting
-    List<double> dummyEmbedding = List.generate(128, (index) => 0.5); 
+    setState(() {
+      _isLoading = true;
+      _statusMessage = "Processing face...";
+    });
     
     try {
+      final imageBytes = await _imageFile!.readAsBytes();
       final token = await _apiService.getToken();
+      
       if (token != null) {
+        setState(() => _statusMessage = "Sending to AI server...");
         final result = await _apiService.registerFace(
           widget.userId, 
-          dummyEmbedding, 
+          imageBytes, 
           'current_device_id', 
           token
-        );
+        ).timeout(const Duration(seconds: 40));
 
         final msg = result['msg']?.toString().toLowerCase() ?? '';
         if (result.containsKey('msg') && (msg.contains('success') || msg.contains('registered'))) {
+          setState(() => _statusMessage = "Success!");
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(context.translate('success'))),
           );
+          
+          await Future.delayed(const Duration(seconds: 1));
           
           Navigator.pushReplacementNamed(
             context, 
@@ -111,16 +118,19 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
             },
           );
         } else {
+          final err = result['msg'] ?? result['error'] ?? "failure";
+          setState(() => _statusMessage = "Failed: $err");
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.translate(result['msg'] ?? 'failure'))),
+            SnackBar(content: Text(context.translate(err))),
           );
         }
       }
     } catch (e) {
       if (!mounted) return;
+      setState(() => _statusMessage = "Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.translate('error'))),
+        SnackBar(content: Text("Registration Error: ${e.toString()}")),
       );
     }
     if (mounted) {
@@ -178,16 +188,17 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                             ? FutureBuilder<void>(
                                 future: _initializeControllerFuture,
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.done) {
+                                  if (snapshot.connectionState == ConnectionState.done && 
+                                      _controller != null && _controller!.value.isInitialized) {
                                     return CameraPreview(_controller!);
                                   } else {
                                     return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
                                   }
                                 },
                               )
-                            : kIsWeb 
-                              ? Image.network(_imageFile!.path, fit: BoxFit.cover)
-                              : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
+                            : (kIsWeb 
+                                ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                                : Image.file(File(_imageFile!.path), fit: BoxFit.cover)),
                       ),
                     ),
                   ),
@@ -223,7 +234,14 @@ class _FaceRegistrationScreenState extends State<FaceRegistrationScreen> {
                         foregroundColor: Colors.black,
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.black)
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)),
+                                const SizedBox(height: 4),
+                                Text(_statusMessage ?? "", style: const TextStyle(fontSize: 10, color: Colors.black54)),
+                              ],
+                            )
                           : Text(
                               context.translate('save_face'), 
                               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)

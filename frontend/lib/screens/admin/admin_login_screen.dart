@@ -41,6 +41,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
           result['access_token'], 
           result['refresh_token'] ?? ''
         );
+        await _apiService.saveUserData(
+          _usernameController.text, 
+          result['role'] ?? 'admin'
+        );
         if (!mounted) return;
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,6 +115,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     const SizedBox(height: 48),
                     TextField(
                       controller: _usernameController,
+                      textInputAction: TextInputAction.next,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                       decoration: InputDecoration(
                         labelText: context.translate('username'),
@@ -121,6 +126,8 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     TextField(
                       controller: _passwordController,
                       obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _handleAdminLogin(),
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                       decoration: InputDecoration(
                         labelText: context.translate('password'),

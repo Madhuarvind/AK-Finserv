@@ -191,6 +191,9 @@ class Collection(db.Model):
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    loan = db.relationship('Loan', backref=db.backref('collections', cascade="all, delete-orphan"))
 
 class Line(db.Model):
     __tablename__ = 'lines'

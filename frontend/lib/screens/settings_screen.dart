@@ -3,10 +3,34 @@ import 'package:provider/provider.dart';
 import '../services/language_service.dart';
 import '../utils/localizations.dart';
 import '../utils/theme.dart';
+import '../services/api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final ApiService _apiService = ApiService();
+  String? _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final role = await _apiService.getUserRole();
+    if (mounted) {
+      setState(() {
+        _role = role;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +76,9 @@ class SettingsScreen extends StatelessWidget {
                   '🇺🇸', 
                   languageProvider
                 ),
-                if (Provider.of<LanguageProvider>(context, listen: false).currentLocale.languageCode == 'en' || true) // Show for now, add detailed check later
+                const SizedBox(height: 16),
+                // Only show System Configuration for Admin role
+                if (_role == 'admin') 
                  _buildOptionTile(context, "System Configuration", "Master settings for interest, penalties & rules", Icons.tune, () {
                    Navigator.pushNamed(context, '/admin/master_settings');
                  }),
@@ -65,18 +91,43 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildOptionTile(BuildContext context, String title, String subtitle, IconData icon, VoidCallback onTap) {
-      return ListTile(
-        onTap: onTap,
-        contentPadding: EdgeInsets.zero,
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, color: AppTheme.primaryColor),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: const Color(0xFF1E1E1E), 
+            width: 2
+          ),
         ),
-        title: Text(title, style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        trailing: const Icon(Icons.chevron_right),
-      );
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1), 
+                borderRadius: BorderRadius.circular(12)
+              ),
+              child: Icon(icon, color: AppTheme.primaryColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor)),
+                  Text(subtitle, style: GoogleFonts.outfit(fontSize: 12, color: AppTheme.secondaryTextColor)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppTheme.secondaryTextColor),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildLanguageCard(

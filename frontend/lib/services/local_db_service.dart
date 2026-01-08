@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalDbService {
   static Database? _database;
@@ -341,5 +342,15 @@ class LocalDbService {
      if (kIsWeb) return;
      final db = await database;
      await db.update('collections', {'is_synced': 1}, where: 'local_id = ?', whereArgs: [localId]);
+  }
+
+  Future<String> getDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? deviceId = prefs.getString('device_id');
+    if (deviceId == null) {
+      deviceId = DateTime.now().millisecondsSinceEpoch.toString();
+      await prefs.setString('device_id', deviceId);
+    }
+    return deviceId;
   }
 }

@@ -7,6 +7,7 @@ import '../../utils/localizations.dart';
 import 'package:provider/provider.dart';
 import '../../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'face_verification_screen.dart';
 
 class PinLoginScreen extends StatefulWidget {
   const PinLoginScreen({super.key});
@@ -38,7 +39,8 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
 
     // 2. If offline fails (not found or WRONG pin), try Online Validation
     try {
-      final result = await _apiService.loginPin(name, _pinController.text);
+      final deviceId = await _localDbService.getDeviceId();
+      final result = await _apiService.loginPin(name, _pinController.text, deviceId: deviceId);
       final msg = result['msg']?.toString().toLowerCase() ?? '';
       
       if (result.containsKey('access_token')) {
@@ -59,6 +61,17 @@ class _PinLoginScreenState extends State<PinLoginScreen> {
         }
         
         if (!mounted) return;
+        
+        if (msg == 'requires_face_verification') {
+           Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FaceVerificationScreen(userName: name),
+            ),
+          );
+          return;
+        }
+
         if (result['role'] == 'admin') {
           Navigator.pushNamedAndRemoveUntil(context, '/admin/dashboard', (route) => false);
         } else {

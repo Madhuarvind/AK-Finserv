@@ -60,10 +60,42 @@ def login_pin():
 
         # Direct PIN check mirroring Admin Login pattern
         if bcrypt.checkpw(pin.encode('utf-8'), user.pin_hash.encode('utf-8')):
+            # User PIN is correct. Now check Device Security.
+            device_id = data.get('device_id')
+            
+            # Check if this user has any face data registered (Biometric Enabled)
+            from models import FaceEmbedding
+            has_biometrics = FaceEmbedding.query.filter_by(user_id=user.id).first() is not None
+            
+            if has_biometrics:
+                # If biometrics enabled, enforce Trusted Device policy
+                if not device_id:
+                     return jsonify({
+                        "msg": "requires_face_verification", 
+                        "reason": "new_device",
+                        "name": user.name
+                    }), 200
+                    
+                trusted_device = Device.query.filter_by(user_id=user.id, device_id=device_id, is_trusted=True).first()
+                if not trusted_device:
+                    # PIN is good, but Device is Unknown -> Require Face
+                    return jsonify({
+                        "msg": "requires_face_verification", 
+                        "reason": "new_device",
+                        "name": user.name
+                    }), 200
+            
+            # If no biometrics or Device is Trusted -> Log in
             user.last_login = datetime.utcnow()
             
+            # Update device last active if exists
+            if device_id:
+                dev = Device.query.filter_by(user_id=user.id, device_id=device_id).first()
+                if dev:
+                    dev.last_active = datetime.utcnow()
+            
             # Simple Audit success login
-            log = LoginLog(user_id=user.id, status='success', ip_address=request.remote_addr)
+            log = LoginLog(user_id=user.id, status='success', ip_address=request.remote_addr, device_info=device_id or "Unknown")
             db.session.add(log)
             db.session.commit()
             
@@ -91,90 +123,67 @@ def login_pin():
 @auth_bp.route('/verify-face-login', methods=['POST'])
 def verify_face_login():
     try:
-        data = request.get_json()
-        name = data.get('name', '').strip()
-        embedding = data.get('embedding')
-        device_id = data.get('device_id')
+        # 1. Get identifier (name or uid)
+        name = request.form.get('name', '').strip()
+        device_id = request.form.get('device_id')
         
-        if not name or not embedding:
-            return jsonify({"msg": "Name and face data required"}), 400
+        if 'file' not in request.files or not name:
+            return jsonify({"msg": "Missing face file or name"}), 400
+            
+        file = request.files['file']
+        image_bytes = file.read()
         
         user = User.query.filter(User.name.ilike(name)).first()
-        
         if not user:
-            # Log failure: User not found
-            log = LoginLog(status='failed', device_info=request.headers.get('User-Agent'), ip_address=request.remote_addr)
-            db.session.add(log)
-            db.session.commit()
             return jsonify({"msg": "Invalid Login"}), 401
-        
-        if user.is_locked:
-            return jsonify({"msg": "Account locked. Contact Admin."}), 403
-        
-        # Retrieve stored face embedding
+            
+        # 2. Get registered face
         from models import FaceEmbedding
         stored_face = FaceEmbedding.query.filter_by(user_id=user.id).first()
-        
         if not stored_face:
-            return jsonify({"msg": "Face not registered. Please use PIN login."}), 401
+            return jsonify({"msg": "Face not registered"}), 401
+            
+        # 3. Real ML Verification
+        from utils.face_utils import generate_face_embedding, compare_embeddings
+        current_embedding, error = generate_face_embedding(image_bytes)
         
-        # Compare embeddings using cosine similarity
-        import numpy as np
-        stored_embedding = np.array(stored_face.embedding_data)
-        submitted_embedding = np.array(embedding)
+        if error:
+            return jsonify({"msg": f"AI Error: {error}"}), 422
+            
+        # Check for model version mismatch (e.g. 128-d vs 1280-d)
+        stored_emb = stored_face.embedding_data
         
-        # Cosine similarity: dot product / (norm1 * norm2)
-        similarity = np.dot(stored_embedding, submitted_embedding) / (
-            np.linalg.norm(stored_embedding) * np.linalg.norm(submitted_embedding)
-        )
+        if len(stored_emb) != len(current_embedding):
+            return jsonify({"msg": "Security model updated. Please re-register your face from an admin account."}), 400
+            
+        similarity = compare_embeddings(stored_emb, current_embedding)
         
-        # Threshold for face match (0.85 is typical for face recognition)
-        if similarity >= 0.85:
-            # Face verified -> Check Device Binding
-            if user.device_binding_enabled and device_id:
-                trusted_device = Device.query.filter_by(user_id=user.id, is_trusted=True).first()
-                if trusted_device and trusted_device.device_id != device_id:
-                    # Audit failed login (Device Mismatch)
-                    log = LoginLog(
-                        user_id=user.id, 
-                        status='failed_device_mismatch', 
-                        device_info=request.headers.get('User-Agent'),
-                        ip_address=request.remote_addr
-                    )
-                    db.session.add(log)
-                    db.session.commit()
-                    return jsonify({"msg": "Login blocked on new device. Contact Admin."}), 403
-                
-                # Update or create device record
+        # Threshold for MobileNetV2 features (tuned for reliability)
+        if similarity >= 0.75:
+            # Face verified -> Trust this device
+            if device_id:
                 device = Device.query.filter_by(user_id=user.id, device_id=device_id).first()
                 if not device:
-                    device = Device(user_id=user.id, device_id=device_id, device_name=request.headers.get('User-Agent', 'Unknown'))
+                    device = Device(user_id=user.id, device_id=device_id, device_name="Verified Device", is_trusted=True)
                     db.session.add(device)
                 else:
+                    device.is_trusted = True
                     device.last_active = datetime.utcnow()
-            
-            user.last_login = datetime.utcnow()
-            
-            # Audit success login
-            log = LoginLog(user_id=user.id, status='success_face', device_info=request.headers.get('User-Agent'), ip_address=request.remote_addr)
-            db.session.add(log)
-            db.session.commit()
+                db.session.commit()
             
             access_token = create_access_token(identity=name)
             refresh_token = create_refresh_token(identity=name)
             
             return jsonify({
-                "msg": "Face verified successfully",
+                "msg": "face_verified",
                 "access_token": access_token,
                 "refresh_token": refresh_token,
-                "role": user.role.value,
-                "is_active": user.is_active,
-                "is_locked": user.is_locked
+                "role": user.role.value
             }), 200
         else:
-            return jsonify({"msg": "Face not recognized"}), 401
+            return jsonify({"msg": f"Face Mismatch (Score: {round(similarity, 2)})"}), 401
+            
     except Exception as e:
-        print(f"Face Verify Error: {str(e)}")
         return jsonify({"msg": "server_error", "error": str(e)}), 500
 
 
@@ -328,30 +337,38 @@ def register_worker():
 @auth_bp.route('/register-face', methods=['POST'])
 @jwt_required()
 def register_face():
-    identity = get_jwt_identity()
-    admin = User.query.filter((User.mobile_number == identity) | (User.username == identity)).first()
-    
-    if not admin or admin.role != UserRole.ADMIN:
-        return jsonify({"msg": "Access Denied"}), 403
+    try:
+        user_id = request.form.get('user_id')
+        device_id = request.form.get('device_id')
+        
+        if 'file' not in request.files or not user_id:
+            return jsonify({"msg": "Missing face file or User ID"}), 400
+            
+        file = request.files['file']
+        image_bytes = file.read()
 
-    data = request.get_json()
-    user_id = data.get('user_id')
-    embedding = data.get('embedding')
-    device_id = data.get('device_id')
+        from utils.face_utils import generate_face_embedding
+        embedding, error = generate_face_embedding(image_bytes)
+        
+        if error:
+            return jsonify({"msg": f"AI Error: {error}"}), 422
 
-    if not user_id or not embedding:
-        return jsonify({"msg": "User ID and biometric data required"}), 400
+        from models import FaceEmbedding
+        # Remove old embedding if exists
+        user_id_int = int(user_id)
+        FaceEmbedding.query.filter_by(user_id=user_id_int).delete()
+        
+        new_face = FaceEmbedding(
+            user_id=user_id_int,
+            embedding_data=embedding,
+            device_id=device_id
+        )
+        db.session.add(new_face)
+        db.session.commit()
 
-    from models import FaceEmbedding
-    new_face = FaceEmbedding(
-        user_id=user_id,
-        embedding_data=embedding,
-        device_id=device_id
-    )
-    db.session.add(new_face)
-    db.session.commit()
-
-    return jsonify({"msg": "Face registered successfully"}), 201
+        return jsonify({"msg": "face_registered_successfully"}), 201
+    except Exception as e:
+        return jsonify({"msg": "server_error", "error": str(e)}), 500
 
 @auth_bp.route('/users', methods=['GET'])
 @jwt_required()

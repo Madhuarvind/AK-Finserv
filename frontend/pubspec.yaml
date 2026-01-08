@@ -53,6 +53,7 @@ dependencies:
   universal_html: ^2.2.4
   fl_chart: ^0.70.2
   geolocator: ^13.0.1
+  url_launcher: ^6.3.0
 
   path: any
   file_picker: ^10.3.8

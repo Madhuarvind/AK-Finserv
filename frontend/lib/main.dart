@@ -11,8 +11,12 @@ import 'screens/admin/worker_qr_screen.dart';
 import 'screens/admin/audit_logs_screen.dart';
 import 'screens/admin/user_management_screen.dart';
 import 'screens/admin/user_detail_screen.dart';
+import 'screens/auth/face_verification_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/admin/master_settings_screen.dart';
+import 'screens/admin/risk_prediction_screen.dart';
+import 'screens/admin/worker_performance_screen.dart';
+import 'screens/admin/security_compliance_screen.dart';
 import 'screens/worker_dashboard.dart';
 import 'screens/profile_screen.dart';
 import 'screens/security_settings_screen.dart';
@@ -29,8 +33,7 @@ import 'screens/admin/admin_customer_list_screen.dart';
 import 'screens/admin/loan_approval_screen.dart';
 import 'screens/admin/customer_detail_screen.dart';
 import 'screens/admin/reports_screen.dart';
-import 'screens/admin/risk_analytics_screen.dart';
-
+import 'screens/admin/collection_ledger_screen.dart';
 
 late List<CameraDescription> cameras;
 
@@ -123,16 +126,29 @@ class VasoolDriveApp extends StatelessWidget {
         '/agent/lines': (context) => const AgentLinesScreen(),
         '/admin/customers': (context) => const AdminCustomerListScreen(),
         '/admin/loan_approvals': (context) => const LoanApprovalScreen(),
-        '/admin/reports': (context) => ReportsScreen(),
+        '/admin/reports': (context) => ReportsScreen(), 
+        '/admin/collection_ledger': (context) => const CollectionLedgerScreen(),
         '/admin/master_settings': (context) => const MasterSettingsScreen(),
-        '/admin/risk_analytics': (context) => const RiskAnalyticsScreen(),
-        '/admin/customer_detail': (context) {
-           final customerId = ModalRoute.of(context)?.settings.arguments;
+        '/admin/risk_prediction': (context) => const RiskPredictionScreen(),
+        '/admin/worker_performance': (context) => const WorkerPerformanceScreen(),
+        '/admin/security': (context) => const SecurityComplianceScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/admin/customer_detail') {
+           final customerId = settings.arguments;
            if (customerId is int) {
-             return CustomerDetailScreen(customerId: customerId);
+             return MaterialPageRoute(builder: (context) => CustomerDetailScreen(customerId: customerId));
            }
-           return const Scaffold(body: Center(child: Text('Error: Missing customer ID')));
-        },
+           return MaterialPageRoute(builder: (context) => const Scaffold(body: Center(child: Text('Error: Missing customer ID'))));
+        }
+        if (settings.name == '/verify_face') {
+           final userName = settings.arguments;
+           if (userName is String) {
+             return MaterialPageRoute(builder: (context) => FaceVerificationScreen(userName: userName));
+           }
+           return MaterialPageRoute(builder: (context) => const Scaffold(body: Center(child: Text('Error: Missing worker name'))));
+        }
+        return null; // Let the default routes handle other paths
       },
      );
     },

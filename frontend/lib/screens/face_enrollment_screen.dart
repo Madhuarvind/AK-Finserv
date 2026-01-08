@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../utils/theme.dart';
 import '../services/api_service.dart';
 import '../utils/localizations.dart';
@@ -20,18 +22,18 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
   bool _isProcessing = false;
   final ApiService _apiService = ApiService();
   final _storage = const FlutterSecureStorage();
+  Future<void>? _initializeControllerFuture;
+  String? _statusMessage;
 
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
+    _initializeControllerFuture = _initializeCamera();
   }
 
   Future<void> _initializeCamera() async {
     if (cameras.isEmpty) {
-
       return;
-
     }
     
     // Find front camera
@@ -51,7 +53,6 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
     try {
       await _controller!.initialize();
-      if (mounted) setState(() {});
     } catch (e) {
       debugPrint("Camera Error: $e");
     }
@@ -65,9 +66,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
   Future<void> _takePicture() async {
     if (_controller == null || !_controller!.value.isInitialized || _isProcessing) {
-
       return;
-
     }
 
     setState(() => _isProcessing = true);
@@ -84,43 +83,54 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
   Future<void> _uploadFace() async {
     if (_imageFile == null) {
-
       return;
-
     }
     
-    setState(() => _isProcessing = true);
+    setState(() {
+      _isProcessing = true;
+      _statusMessage = "Starting upload...";
+    });
     
     try {
       final token = await _storage.read(key: 'jwt_token');
-      final profile = await _apiService.getMyProfile(token!);
+      if (token == null) {
+        setState(() => _statusMessage = "Error: Not logged in");
+        return;
+      }
+
+      setState(() => _statusMessage = "Fetching profile...");
+      final profile = await _apiService.getMyProfile(token).timeout(const Duration(seconds: 10));
       
-      // Using dummy embedding as per existing FaceRegistrationScreen logic
-      List<double> dummyEmbedding = List.generate(128, (index) => 0.6); 
+      setState(() => _statusMessage = "Processing image...");
+      final imageBytes = await _imageFile!.readAsBytes();
       
+      setState(() => _statusMessage = "Sending to AI server...");
       final result = await _apiService.registerFace(
         profile['id'],
-        dummyEmbedding,
+        imageBytes,
         'self_device',
         token,
-      );
+      ).timeout(const Duration(seconds: 40));
 
       if (mounted) {
         if (result.containsKey('msg') && result['msg'] == 'face_registered_successfully') {
+          setState(() => _statusMessage = "Success!");
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Face registered successfully!")));
+          await Future.delayed(const Duration(seconds: 1));
           Navigator.pop(context, true);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['msg'] ?? "Error registering face")));
+          final err = result['msg'] ?? result['error'] ?? "Error registering face";
+          setState(() => _statusMessage = "Failed: $err");
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
         }
       }
     } catch (e) {
       if (!mounted) return;
+      setState(() => _statusMessage = "Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Upload Error: $e")));
     } finally {
       if (mounted) {
-
         setState(() => _isProcessing = false);
-
       }
     }
   }
@@ -139,14 +149,35 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
         children: [
           Expanded(
             child: Center(
-              child: _imageFile != null
-                  ? Image.network(_imageFile!.path) // Better for both web and mobile
-                  : (_controller != null && _controller!.value.isInitialized)
-                      ? AspectRatio(
-                          aspectRatio: _controller!.value.aspectRatio,
-                          child: CameraPreview(_controller!),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  _imageFile == null
+                      ? FutureBuilder<void>(
+                          future: _initializeControllerFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.done && 
+                                _controller != null && _controller!.value.isInitialized) {
+                              return CameraPreview(_controller!);
+                            } else {
+                              return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+                            }
+                          },
                         )
-                      : const CircularProgressIndicator(color: AppTheme.primaryColor),
+                      : (kIsWeb 
+                          ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                          : Image.file(File(_imageFile!.path), fit: BoxFit.cover)),
+                  // Oval Guide
+                  Container(
+                    width: 250,
+                    height: 350,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(150),
+                      border: Border.all(color: Colors.white38, width: 2),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           Container(
@@ -159,7 +190,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _imageFile == null ? "Position your face in the frame" : "Check if photo is clear",
+                  _imageFile == null ? context.translate('enrollment_guide') : context.translate('check_photo'),
                   style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
                 const SizedBox(height: 24),
@@ -167,7 +198,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                   ElevatedButton.icon(
                     onPressed: _isProcessing ? null : _takePicture,
                     icon: _isProcessing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.camera_alt_rounded),
-                    label: const Text("CAPTURE FACE"),
+                    label: Text(context.translate('capture').toUpperCase()),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.black,
@@ -179,28 +210,37 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => setState(() { _imageFile = null; _isProcessing = false; }),
-                          style: OutlinedButton.styleFrom(
-                            minimumSize: const Size(0, 56),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: OutlinedButton(
+                            onPressed: () => setState(() { _imageFile = null; _isProcessing = false; }),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 56),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            child: Text(context.translate('retake')),
                           ),
-                          child: const Text("RETRY"),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _isProcessing ? null : _uploadFace,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(0, 56),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: _isProcessing ? null : _uploadFace,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 56),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            child: _isProcessing 
+                                ? Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                                      const SizedBox(height: 4),
+                                      Text(_statusMessage ?? "", style: const TextStyle(fontSize: 10, color: Colors.white70)),
+                                    ],
+                                  ) 
+                                : Text(context.translate('save')),
                           ),
-                          child: _isProcessing ? const CircularProgressIndicator(color: Colors.white) : const Text("SUBMIT"),
                         ),
-                      ),
                     ],
                   ),
               ],

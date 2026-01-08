@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, User, Customer, Loan, Collection, UserRole, EMISchedule, LoanAuditLog
 from datetime import datetime, timedelta
+from utils.interest_utils import calculate_flat_emi, calculate_reducing_emi, generate_dates, get_distance_meters
 
 collection_bp = Blueprint('collection', __name__)
 
@@ -48,6 +49,30 @@ def submit_collection():
             "status": duplicate.status
         }), 200
 
+    # --- PHASE 11: AI-POWERED FRAUD DETECTION & GEOFENCING ---
+    fraud_flag = False
+    fraud_reason = []
+    
+    # A. Geofencing Check
+    if loan.customer and loan.customer.latitude and loan.customer.longitude and latitude and longitude:
+        distance = get_distance_meters(latitude, longitude, loan.customer.latitude, loan.customer.longitude)
+        if distance > 200: # 200 meters threshold
+            fraud_flag = True
+            fraud_reason.append(f"Geofencing Violation: {round(distance)}m away from customer profile location")
+    
+    # B. Collection Velocity Check (Anti-Speed Collection)
+    # If agent is submitting multiple collections from different customers too fast
+    last_agent_collection = Collection.query.filter_by(agent_id=user.id).order_by(Collection.created_at.desc()).first()
+    if last_agent_collection:
+        time_diff = (datetime.utcnow() - last_agent_collection.created_at).total_seconds()
+        if time_diff < 30: # Less than 30 seconds between distinct collections
+            fraud_flag = True
+            fraud_reason.append(f"Velocity Anomaly: System detected rapid-fire collection ({int(time_diff)}s since last entry)")
+
+    collect_status = 'approved'
+    if fraud_flag:
+        collect_status = 'flagged' # Admin must review
+
     # 2. Record Collection
     new_collection = Collection(
         loan_id=loan_id,
@@ -56,8 +81,18 @@ def submit_collection():
         payment_mode=payment_mode,
         latitude=latitude,
         longitude=longitude,
-        status='approved' # Auto-approve for now, or 'pending' if requiring verification
+        status=collect_status
     )
+    
+    if fraud_flag:
+        # Log suspected fraud in audit
+        audit_fraud = LoanAuditLog(
+            loan_id=loan.id,
+            action='FRAUD_ALERT',
+            performed_by=user.id,
+            remarks=f"SUSPECTED FRAUD: {', '.join(fraud_reason)}"
+        )
+        db.session.add(audit_fraud)
     
     db.session.add(new_collection)
     
@@ -113,7 +148,8 @@ def submit_collection():
             "msg": "collection_submitted_successfully", 
             "id": new_collection.id,
             "status": new_collection.status,
-            "loan_balance": loan.pending_amount
+            "loan_balance": loan.pending_amount,
+            "fraud_warning": fraud_reason if fraud_flag else None
         }), 201
     except Exception as e:
         db.session.rollback()
@@ -298,11 +334,14 @@ def get_collection_history():
     # Get 10 most recent collections for this agent
     history = Collection.query.filter_by(agent_id=user.id).order_by(Collection.created_at.desc()).limit(10).all()
     
+    if history:
+        print(f"DEBUG: Collection object attributes: {dir(history[0])}")
+    
     return jsonify([{
         "id": c.id,
         "amount": c.amount,
         "status": c.status,
         "time": c.created_at.isoformat(),
-        "customer_name": c.loan.customer.name if c.loan and c.loan.customer else "Unknown",
+        "customer_name": c.loan.customer.name if hasattr(c, 'loan') and c.loan and c.loan.customer else "Unknown",
         "payment_mode": c.payment_mode
     } for c in history]), 200

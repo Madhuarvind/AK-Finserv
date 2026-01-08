@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:device_info_plus/device_info_plus.dart';
+
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -23,27 +23,8 @@ class ApiService {
 
   String get _apiBase => baseUrl.replaceFirst('/auth', '');
   final _storage = const FlutterSecureStorage();
-  final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
 
-  Future<String?> _getDeviceId() async {
-    if (kIsWeb) {
 
-      return 'web_device';
-
-    }
-    try {
-      if (Platform.isAndroid) {
-        AndroidDeviceInfo androidInfo = await _deviceInfo.androidInfo;
-        return androidInfo.id;
-      } else if (Platform.isIOS) {
-        IosDeviceInfo iosInfo = await _deviceInfo.iosInfo;
-        return iosInfo.identifierForVendor;
-      }
-    } catch (e) {
-      return 'unknown_device';
-    }
-    return 'desktop_device';
-  }
 
   Future<void> saveTokens(String access, String refresh) async {
     await _storage.write(key: 'jwt_token', value: access);
@@ -57,6 +38,10 @@ class ApiService {
 
   Future<String?> getUserName() async {
     return await _storage.read(key: 'user_name');
+  }
+
+  Future<String?> getUserRole() async {
+    return await _storage.read(key: 'user_role');
   }
 
   Future<String?> getRefreshToken() async {
@@ -104,16 +89,15 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> loginPin(String name, String pin) async {
-    final deviceId = await _getDeviceId();
+  Future<Map<String, dynamic>> loginPin(String name, String pin, {String? deviceId}) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/login-pin'),
+        Uri.parse('$_apiBase/auth/login-pin'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'name': name, 
+          'name': name,
           'pin': pin,
-          'device_id': deviceId
+          if (deviceId != null) 'device_id': deviceId
         }),
       ).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
@@ -157,23 +141,44 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> registerFace(int userId, List<double> embedding, String? deviceId, String token) async {
+  Future<Map<String, dynamic>> registerFace(int userId, dynamic imageBytes, String? deviceId, String token) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/register-face'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'user_id': userId,
-          'embedding': embedding,
-          'device_id': deviceId
-        }),
-      ).timeout(const Duration(seconds: 10));
+      var request = http.MultipartRequest('POST', Uri.parse('$_apiBase/auth/register-face'));
+      request.headers['Authorization'] = 'Bearer $token';
+      request.fields['user_id'] = userId.toString();
+      if (deviceId != null) request.fields['device_id'] = deviceId;
+      
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        imageBytes,
+        filename: 'face.jpg',
+      ));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
       return jsonDecode(response.body);
     } catch (e) {
-      debugPrint('API Error: $e');
+      return {'msg': 'connection_failed'};
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyFaceLogin(String name, dynamic imageBytes, String? deviceId) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$_apiBase/auth/verify-face-login'));
+      request.fields['name'] = name;
+      if (deviceId != null) request.fields['device_id'] = deviceId;
+      
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        imageBytes,
+        filename: 'verify.jpg',
+      ));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('verifyFaceLogin Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -381,27 +386,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> verifyFaceLogin(
-    String name, 
-    List<double> embedding
-  ) async {
-    final deviceId = await _getDeviceId();
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/verify-face-login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': name,
-          'embedding': embedding,
-          'device_id': deviceId
-        }),
-      ).timeout(const Duration(seconds: 10));
-      return jsonDecode(response.body);
-    } catch (e) {
-      debugPrint('API Error: $e');
-      return {'msg': 'connection_failed', 'details': e.toString()};
-    }
-  }
+
 
   Future<List<dynamic>> getAuditLogs(String token) async {
     try {
@@ -581,7 +566,8 @@ class ApiService {
       if (response.statusCode != 200 && response.statusCode != 201) {
         return {'msg': 'Server Error: ${response.statusCode}', 'body': response.body};
       }
-      return jsonDecode(response.body);
+      final decoded = jsonDecode(response.body);
+      return decoded;
     } catch (e) {
       debugPrint('SubmitCollection Error: $e');
       return {'msg': 'connection_failed: $e'};
@@ -864,6 +850,142 @@ class ApiService {
     } catch (e) {
       return [];
     }
+  }
+
+
+  // AI Analytics
+  Future<Map<String, dynamic>> getRiskScore(int customerId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/analytics/risk-score/$customerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'msg': 'analysis_failed', 'risk_score': 0, 'risk_level': 'N/A'};
+    }
+  }
+
+  Future<Map<String, dynamic>> getRiskDashboard(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/analytics/risk-dashboard'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {};
+    }
+  }
+
+  Future<List<dynamic>> getWorkerPerformanceAnalytics(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/analytics/worker-performance'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 15));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getCustomerBehaviorAnalytics(int customerId, String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/analytics/customer-behavior/$customerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 15));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'segment': 'ERROR', 'reliability_score': 0};
+    }
+  }
+
+  Future<Map<String, dynamic>> getDashboardAIInsights(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/analytics/dashboard-ai-insights'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 15));
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'ai_summaries': ['AI analysis unavailable at this moment.']};
+    }
+  }
+
+  Future<List<dynamic>> getWorkTargets(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/reports/work-targets'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token'
+        },
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getWorkTargets Error: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getSecurityFlags(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/security/role-abuse-detection'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'flags': []};
+    }
+  }
+
+  Future<Map<String, dynamic>> getTamperDetection(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/security/tamper-detection'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'alerts': []};
+    }
+  }
+
+  Future<List<dynamic>> getDeviceMonitoring(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/security/device-health'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  String getAuditExportUrl() {
+    return '$_apiBase/security/audit-export';
   }
 
   Future<Map<String, dynamic>> getPenaltySummary(int loanId, String token) async {

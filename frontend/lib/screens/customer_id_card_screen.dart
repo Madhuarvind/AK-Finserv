@@ -14,6 +14,7 @@ class CustomerIdCardScreen extends StatelessWidget {
   Future<void> _printCard(BuildContext context) async {
     try {
       final doc = pw.Document();
+      final logo = await imageFromAssetBundle('assets/logo.png');
 
       // Standard ID card size: 85.6mm x 54mm
       final cardFormat = PdfPageFormat.roll80.copyWith(
@@ -41,14 +42,7 @@ class CustomerIdCardScreen extends StatelessWidget {
                      child: pw.Column(
                        crossAxisAlignment: pw.CrossAxisAlignment.start,
                        children: [
-                         pw.Text(
-                           'ARUN FINANCE',
-                           style: pw.TextStyle(
-                             color: PdfColors.white,
-                             fontSize: 10,
-                             fontWeight: pw.FontWeight.bold,
-                           ),
-                         ),
+                         pw.Image(logo, width: 80),
                          pw.SizedBox(height: 4),
                          pw.Text(
                            customer['name']?.toString().toUpperCase() ?? 'N/A',

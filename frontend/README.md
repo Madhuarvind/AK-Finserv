@@ -1,6 +1,6 @@
-# Vasool Drive - Frontend
+# AK Finserv - Frontend
 
-The mobile application interface for the Vasool Drive Daily Finance Collection System, built with **Flutter**.
+The mobile application interface for the AK Finserv Daily Finance Collection System, built with **Flutter**.
 
 ## 📱 Overview
 This application serves two primary user roles:

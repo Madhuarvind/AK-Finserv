@@ -152,12 +152,18 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
                     ),
                     const SizedBox(height: 60),
                     Container(
-                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
+                        boxShadow: [
+                           BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, spreadRadius: 2)
+                        ]
                       ),
-                      child: const Icon(Icons.person_pin_rounded, size: 48, color: AppTheme.primaryColor),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.white,
+                        backgroundImage: const AssetImage('assets/logo.png'),
+                        onBackgroundImageError: (_, __) => const Icon(Icons.error),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     Text(

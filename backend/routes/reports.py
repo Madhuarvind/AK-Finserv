@@ -122,7 +122,7 @@ def get_daily_report():
                 {
                     "id": c.id,
                     "amount": c.amount,
-                    "mode": c.payment_mode,
+                    "payment_mode": c.payment_mode,
                     "status": c.status,
                     "time": c.created_at.isoformat() + "Z",
                     "agent_name": c.agent.name if c.agent else "Unknown",
@@ -594,11 +594,26 @@ def get_dashboard_insights():
             f"Current market exposure (outstanding) stands at ₹{float(total_outstanding):,.2f}.",
         ]
 
+        # 4. Problem Loans (Simplified)
+        problem_loans_data = Loan.query.filter(
+            Loan.status == "active", Loan.pending_amount > Loan.principal_amount * 1.3
+        ).limit(3).all()
+
+        problems = [
+            {
+                "customer_name": l.customer.name if l.customer else "Unknown",
+                "loan_id": l.id,
+                "reason": "Outstanding > 130% of Principal",
+                "risk_score": 85
+            } for l in problem_loans_data
+        ]
+
         return (
             jsonify(
                 {
-                    "insights": insights,
+                    "ai_summaries": insights,
                     "sentiment": "Neutral",
+                    "problem_loans": problems,
                     "recommendation": "Monitor high-risk accounts in 'Risk Analytics' section.",
                 }
             ),
@@ -644,6 +659,21 @@ def get_work_targets():
                     ).all()
 
                     if pending_emis:
+                        # Check if any collection (approved or pending) exists for this loan today
+                        # to avoid showing it in work targets if already collected.
+                        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+                        today_end = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=999999)
+                        
+                        already_collected = Collection.query.filter(
+                            Collection.loan_id == loan.id,
+                            Collection.created_at >= today_start,
+                            Collection.created_at <= today_end,
+                            Collection.status != 'rejected'
+                        ).first()
+                        
+                        if already_collected:
+                            continue
+
                         total_due = sum(emi.amount for emi in pending_emis)
                         is_overdue = any(func.date(emi.due_date) < today for emi in pending_emis)
                         

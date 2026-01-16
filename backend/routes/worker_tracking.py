@@ -42,13 +42,16 @@ def get_field_map():
     if not admin:
         return jsonify({"msg": "unauthorized"}), 403
         
-    current_role = admin.role.value if hasattr(admin.role, 'value') else admin.role
-    if current_role != UserRole.ADMIN.value:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if current_role != UserRole.ADMIN.value and current_role != "admin":
         return jsonify({"msg": "unauthorized"}), 403
         
-    # Query agents more robustly
+    # Query agents more robustly (handle enum vs string)
     agents = User.query.filter(
-        (User.role == UserRole.FIELD_AGENT) | (User.role == 'field_agent')
+        db.or_(
+            User.role == UserRole.FIELD_AGENT,
+            User.role == "field_agent"
+        )
     ).all()
     
     result = []

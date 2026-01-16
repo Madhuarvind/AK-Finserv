@@ -135,6 +135,9 @@ def login_pin():
             access_token = create_access_token(identity=name)
             refresh_token = create_refresh_token(identity=name)
 
+            # Resolve role value safely
+            current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+
             print(f"Login success for: {name}")
             return (
                 jsonify(
@@ -142,7 +145,7 @@ def login_pin():
                         "msg": "Login success",
                         "access_token": access_token,
                         "refresh_token": refresh_token,
-                        "role": user.role.value,
+                        "role": current_role,
                         "is_active": user.is_active,
                         "is_locked": user.is_locked,
                     }
@@ -267,8 +270,8 @@ def admin_login():
         return jsonify({"msg": f"Access Denied: User '{username}' not found"}), 403
 
     # Normalize role check
-    current_role = user.role.value if hasattr(user.role, 'value') else user.role
-    if current_role != UserRole.ADMIN.value:
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    if current_role != "admin" and current_role != UserRole.ADMIN.value:
         print(
             f"DEBUG: Admin login failed - User '{username}' has role {current_role}, expected {UserRole.ADMIN.value}"
         )
@@ -310,7 +313,7 @@ def admin_login():
                 "msg": "Login success",
                 "access_token": access_token,
                 "refresh_token": refresh_token,
-                "role": user.role.value,
+                "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
                 "is_active": user.is_active,
                 "is_locked": user.is_locked,
             }
@@ -355,7 +358,7 @@ def admin_verify():
                 "msg": "Login success",
                 "access_token": access_token,
                 "refresh_token": refresh_token,
-                "role": user.role.value,
+                "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
             }
         ),
         200,
@@ -384,8 +387,8 @@ def register_worker():
         return jsonify({"msg": "Access Denied"}), 403
 
     # Ensure role comparison works for both Enum object and string value from DB
-    current_role = admin.role.value if hasattr(admin.role, 'value') else admin.role
-    if current_role != UserRole.ADMIN.value:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if current_role != "admin" and current_role != UserRole.ADMIN.value:
          logger.error(f"Access Denied: User {admin.name} has role {current_role}, expected {UserRole.ADMIN.value}")
          return jsonify({"msg": "Access Denied"}), 403
 
@@ -476,7 +479,8 @@ def register_face():
                 return jsonify({"msg": "target_user_not_found"}), 404
             
             # Non-admins can only register their own face
-            if requester.role != UserRole.ADMIN and requester.id != target_user.id:
+            req_role = requester.role.value if hasattr(requester.role, 'value') else str(requester.role)
+            if req_role != "admin" and req_role != UserRole.ADMIN.value and requester.id != target_user.id:
                 return jsonify({"msg": "permission_denied"}), 403
 
         if "file" not in request.files:
@@ -516,7 +520,8 @@ def list_users():
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     users = User.query.all()
@@ -532,7 +537,7 @@ def list_users():
                 "name": u.name,
                 "username": u.username,
                 "mobile_number": u.mobile_number,
-                "role": u.role.value,
+                "role": u.role.value if hasattr(u.role, 'value') else str(u.role),
                 "area": u.area,
                 "id_proof": u.id_proof,
                 "is_active": u.is_active,
@@ -550,7 +555,8 @@ def reset_device():
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     data = request.get_json()
@@ -572,7 +578,8 @@ def get_audit_logs():
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     logs = LoginLog.query.order_by(LoginLog.login_time.desc()).limit(100).all()
@@ -601,7 +608,8 @@ def clear_biometrics(user_id):
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     from models import FaceEmbedding
@@ -618,7 +626,8 @@ def reset_user_pin(user_id):
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     data = request.get_json()
@@ -644,7 +653,8 @@ def get_user_detail(user_id):
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     u = User.query.get_or_404(user_id)
@@ -666,7 +676,7 @@ def get_user_detail(user_id):
                 "name": u.name,
                 "username": u.username,
                 "mobile_number": u.mobile_number,
-                "role": u.role.value,
+                "role": u.role.value if hasattr(u.role, 'value') else str(u.role),
                 "area": u.area,
                 "address": u.address,
                 "id_proof": u.id_proof,
@@ -689,7 +699,8 @@ def update_user(user_id):
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     u = User.query.get_or_404(user_id)
@@ -728,7 +739,8 @@ def toggle_user_status(user_id):
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     u = User.query.get_or_404(user_id)
@@ -758,10 +770,11 @@ def toggle_user_status(user_id):
 @auth_bp.route("/users/<int:user_id>", methods=["DELETE"])
 @jwt_required()
 def delete_user(user_id):
-    # Safe lookup
+    identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     u = User.query.get_or_404(user_id)
@@ -785,7 +798,8 @@ def get_user_biometrics(user_id):
         (User.mobile_number == identity) | (User.username == identity)
     ).first()
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     from models import FaceEmbedding

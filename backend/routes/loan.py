@@ -115,7 +115,7 @@ def approve_loan(id):
     user = get_user_by_identity(identity)
     
     # Normalize role check
-    current_role = user.role.value if hasattr(user.role, 'value') else user.role
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
     if current_role != "admin" and current_role != UserRole.ADMIN.value:
          return jsonify({"msg": "Admin access required"}), 403
 
@@ -251,9 +251,9 @@ def foreclose_loan(id):
         collection = Collection(
             loan_id=loan.id,
             customer_id=loan.customer_id,
-            amount_collected=settlement_amount,
-            collected_by=user.id,
-            collected_at=datetime.utcnow(),
+            amount=settlement_amount,
+            agent_id=user.id,
+            created_at=datetime.utcnow(),
             notes=f"Foreclosure Settlement. Reason: {reason}",
         )
         db.session.add(collection)
@@ -295,7 +295,7 @@ def get_all_loans():
 
     query = Loan.query
     # Normalize role check
-    current_role = user.role.value if hasattr(user.role, 'value') else user.role
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
     if current_role != "admin" and current_role != UserRole.ADMIN.value:
         # Workers see their assigned loans
         query = query.filter_by(assigned_worker_id=user.id)

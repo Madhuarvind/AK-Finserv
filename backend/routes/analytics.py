@@ -13,10 +13,9 @@ def get_admin_user():
     user = get_user_by_identity(identity)
     if user:
          # Normalize role check
-         current_role = user.role.value if hasattr(user.role, 'value') else user.role
+         current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
          if current_role == "admin" or current_role == UserRole.ADMIN.value:
              return user
-    return None
     return None
 
 

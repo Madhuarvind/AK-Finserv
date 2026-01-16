@@ -150,17 +150,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
             type: BottomNavigationBarType.fixed,
             selectedItemColor: AppTheme.primaryColor,
             unselectedItemColor: Colors.grey,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: "Dashboard"),
-              BottomNavigationBarItem(icon: Icon(Icons.currency_rupee_rounded), label: "Tally"),
+            items: [
+              BottomNavigationBarItem(icon: const Icon(Icons.dashboard_rounded), label: context.translate('dashboard')),
+              BottomNavigationBarItem(icon: const Icon(Icons.currency_rupee_rounded), label: context.translate('tally')),
             ],
           ),
-          body: IndexedStack(
-            index: _currentIndex,
-            children: [
-               _buildDashboardBody(context, languageProvider),
-               const CashSettlementScreen(isTab: true),
-            ],
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: IndexedStack(
+                index: _currentIndex,
+                children: [
+                   _buildDashboardBody(context, languageProvider),
+                   const CashSettlementScreen(isTab: true),
+                ],
+              ),
+            ),
           ),
           floatingActionButton: _currentIndex == 0 ? FloatingActionButton.extended(
             onPressed: () => _showAIAnalyst(context),
@@ -180,7 +185,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           icon: const Icon(Icons.menu_rounded),
           onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
-        title: Text('Daily Tally', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text(context.translate('daily_tally'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -208,7 +213,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), size: 18),
               const SizedBox(width: 8),
               Text(
-                'Search customers...',
+                context.translate('search_customers_hint'),
                 style: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), fontSize: 13),
               ),
             ],
@@ -244,39 +249,62 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       width: double.infinity,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [AppTheme.primaryColor, Color(0xFFD4FF8B)],
+                          colors: [Color(0xFF0F172A), Color(0xFF334155)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(32),
+                        borderRadius: BorderRadius.circular(40),
                         boxShadow: [
-                          BoxShadow(color: AppTheme.primaryColor.withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 8)),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 30,
+                            offset: const Offset(0, 15),
+                          ),
                         ],
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(24.0),
+                        padding: const EdgeInsets.all(32.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Outstanding Balance', style: GoogleFonts.outfit(color: Colors.black54, fontWeight: FontWeight.w600)),
-                                const Icon(Icons.trending_up, color: Colors.black54),
+                                Text(
+                                  context.translate('outstanding_balance'),
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.account_balance_rounded, color: AppTheme.primaryColor, size: 24),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             Text(
                               currencyFormatter.format(_financialStats['outstanding_balance'] ?? 0),
-                              style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.black),
+                              style: GoogleFonts.outfit(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: -1,
+                              ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 24),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildStatItem("Collected", currencyFormatter.format(_financialStats['total_collected'] ?? 0)),
-                                _buildStatItem("Overdue", currencyFormatter.format(_financialStats['overdue_amount'] ?? 0), isRed: true),
-                                _buildStatItem("Active Loans", "${_financialStats['active_loans'] ?? 0}"),
+                                _buildStatItem(context.translate('collected'), currencyFormatter.format(_financialStats['total_collected'] ?? 0), isDark: true),
+                                _buildStatItem(context.translate('overdue'), currencyFormatter.format(_financialStats['overdue_amount'] ?? 0), isRed: true, isDark: true),
+                                _buildStatItem(context.translate('active_loans'), "${_financialStats['active_loans'] ?? 0}", isDark: true),
                               ],
                             ),
                           ],
@@ -482,11 +510,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -494,49 +529,105 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Daily Recovery Pulse", style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(context.translate('daily_recovery_pulse'), style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(12)),
-                child: Text("$agents Agents Live", style: TextStyle(color: Colors.green[800], fontSize: 11, fontWeight: FontWeight.bold)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1FCE4),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 6),
+                    Text("$agents ${context.translate('agents_live')}", style: GoogleFonts.outfit(color: Colors.green[800], fontSize: 11, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey[100],
-            color: AppTheme.primaryColor,
-            minHeight: 12,
-            borderRadius: BorderRadius.circular(6),
+          const SizedBox(height: 24),
+          Stack(
+            children: [
+              Container(
+                height: 14,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutBack,
+                height: 14,
+                width: MediaQuery.of(context).size.width * 0.7 * progress, // Approximation
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppTheme.primaryColor, Color(0xFFD4FF8B)]),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text("₹${NumberFormat('#,##,###').format(collected)} of ₹${NumberFormat('#,##,###').format(total)}", style: GoogleFonts.outfit(color: Colors.black54, fontSize: 13, fontWeight: FontWeight.w600)),
-              Text("${(progress * 100).toStringAsFixed(1)}%", style: GoogleFonts.outfit(color: AppTheme.primaryColor, fontSize: 16, fontWeight: FontWeight.w900)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "₹${NumberFormat('#,##,###').format(collected)} of ₹${NumberFormat('#,##,###').format(total)}",
+                    style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(context.translate('collected_today_pulse'), style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), letterSpacing: 1)),
+                ],
+              ),
+              Text("${(progress * 100).toStringAsFixed(1)}%", style: GoogleFonts.outfit(color: AppTheme.primaryColor, fontSize: 28, fontWeight: FontWeight.w900)),
             ],
           ),
           if (leaders.isNotEmpty) ...[
-            const SizedBox(height: 24),
-            Text("TODAY'S LEADERS", style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
-            const SizedBox(height: 12),
+            const SizedBox(height: 32),
+            Text(context.translate('top_performers'), style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8), letterSpacing: 1.5)),
+            const SizedBox(height: 16),
             SizedBox(
-              height: 40,
+              height: 44,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: leaders.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                separatorBuilder: (context, index) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   final leader = leaders[index];
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(color: Colors.indigo[50], borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFF1F5F9)),
+                    ),
                     child: Center(
-                      child: Text(
-                        "${leader['name']} • ₹${NumberFormat('#,###').format(leader['amount'])}",
-                        style: TextStyle(color: Colors.indigo[900], fontSize: 11, fontWeight: FontWeight.bold),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.stars_rounded, color: Colors.amber, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            "${leader['name']} • ₹${NumberFormat('#,###').format(leader['amount'])}",
+                            style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -574,7 +665,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               const Icon(Icons.auto_awesome, color: Colors.amber, size: 24),
               const SizedBox(width: 12),
-              Text("AI ASSISTANT", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 13)),
+              Text(context.translate('ai_assistant_title'), style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.5, fontSize: 13)),
             ],
           ),
           const SizedBox(height: 16),
@@ -593,7 +684,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             const SizedBox(height: 16),
             const Divider(color: Colors.white24),
             const SizedBox(height: 12),
-            Text("PROBLEM LOANS ALERT", style: GoogleFonts.outfit(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+            Text(context.translate('problem_loans_alert'), style: GoogleFonts.outfit(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             ...problemLoans.take(2).map((l) => _buildProblemLoanCard(l)),
           ]
@@ -612,18 +703,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       child: Row(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(loan['customer'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-              Text("ID: ${loan['loan_id']}", style: const TextStyle(color: Colors.white70, fontSize: 10)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(loan['customer_name'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                const SizedBox(height: 2),
+                Text(loan['reason'] ?? '', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+              ],
+            ),
           ),
-          const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(8)),
-            child: Text("${loan['missed']} Missed", style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: (loan['risk_score'] ?? 0) > 80 ? Colors.redAccent : Colors.orangeAccent,
+              borderRadius: BorderRadius.circular(8)
+            ),
+            child: Text(
+              "RISK: ${loan['risk_score'] ?? 0}",
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)
+            ),
           )
         ],
       ),
@@ -927,7 +1026,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 children: [
                   const Icon(Icons.analytics_rounded, color: Color(0xFFD4FF8B), size: 20),
                   const SizedBox(width: 8),
-                  Text("Auto-Accounting", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(context.translate('auto_accounting') ?? "Auto-Accounting", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                 ],
               ),
               Text(data['date'] ?? '', style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12)),
@@ -938,7 +1037,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               Expanded(
                 child: _buildAccountingMiniCard(
-                  title: "Morning",
+                  title: context.translate('morning'),
                   value: currencyFormatter.format(data['morning'] ?? 0),
                   icon: Icons.wb_sunny_rounded,
                   color: Colors.orangeAccent,
@@ -947,7 +1046,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildAccountingMiniCard(
-                  title: "Evening",
+                  title: context.translate('evening'),
                   value: currencyFormatter.format(data['evening'] ?? 0),
                   icon: Icons.nightlight_round,
                   color: Colors.indigoAccent,
@@ -960,7 +1059,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               Expanded(
                 child: _buildAccountingMiniCard(
-                  title: "Cash",
+                  title: context.translate('cash'),
                   value: currencyFormatter.format(data['cash'] ?? 0),
                   icon: Icons.payments_rounded,
                   color: Colors.greenAccent,
@@ -969,7 +1068,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildAccountingMiniCard(
-                  title: "UPI",
+                  title: context.translate('upi'),
                   value: currencyFormatter.format(data['upi'] ?? 0),
                   icon: Icons.qr_code_scanner_rounded,
                   color: Colors.lightBlueAccent,
@@ -982,7 +1081,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               Expanded(
                 child: _buildAccountingMiniCard(
-                  title: "Principal",
+                  title: context.translate('principal'),
                   value: currencyFormatter.format(data['loan_principal'] ?? 0),
                   icon: Icons.account_balance_rounded,
                   color: const Color(0xFFD4FF8B),
@@ -991,7 +1090,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildAccountingMiniCard(
-                  title: "Interest",
+                  title: context.translate('interest'),
                   value: currencyFormatter.format(data['loan_interest'] ?? 0),
                   icon: Icons.show_chart_rounded,
                   color: Colors.pinkAccent,
@@ -1005,7 +1104,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: TextButton.icon(
               onPressed: () => Navigator.pushNamed(context, '/admin/daily_reports'),
               icon: const Icon(Icons.history_rounded, size: 18, color: Color(0xFFD4FF8B)),
-              label: Text("VIEW HISTORY & ARCHIVES", 
+              label: Text(context.translate('view_history_archives'), 
                 style: GoogleFonts.outfit(color: const Color(0xFFD4FF8B), fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.1)),
               style: TextButton.styleFrom(
                 backgroundColor: Colors.white.withValues(alpha: 0.05),
@@ -1041,12 +1140,26 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
 
-  Widget _buildStatItem(String label, String value, {bool isRed = false}) {
+  Widget _buildStatItem(String label, String value, {bool isRed = false, bool isDark = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: isRed ? Colors.red : Colors.black)),
-        Text(label, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+        Text(
+          value, 
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.bold, 
+            fontSize: 20, 
+            color: isRed ? Colors.redAccent : (isDark ? Colors.white : Colors.black)
+          )
+        ),
+        Text(
+          label, 
+          style: TextStyle(
+            color: isDark ? Colors.white60 : Colors.black54, 
+            fontSize: 12,
+            fontWeight: isDark ? FontWeight.w500 : FontWeight.normal
+          )
+        ),
       ],
     );
   }

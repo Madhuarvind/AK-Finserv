@@ -47,8 +47,10 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
 
   void _startTrackingTimer() {
     _trackingTimer?.cancel();
-    _trackingTimer = Timer.periodic(const Duration(minutes: 5), (timer) async {
-      final dutyStatus = await _storage.read(key: 'duty_status');
+    // Reduce to 1 minute for better "Live Tracking"
+    _trackingTimer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+      final name = await _storage.read(key: 'user_name');
+      final dutyStatus = await _storage.read(key: 'duty_status_$name');
       if (dutyStatus == 'on_duty') {
         _syncLocation();
       }
@@ -60,12 +62,28 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
     if (token == null) return;
 
     try {
-      final pos = await Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: LocationAccuracy.medium, timeLimit: const Duration(seconds: 10)));
+      // Check for permissions first
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      
+      if (permission == LocationPermission.deniedForever) return;
+
+      // Use LocationAccuracy.high for "Proper Location" accuracy
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high, 
+          timeLimit: Duration(seconds: 15)
+        )
+      );
+      
       await _apiService.updateWorkerTracking(
         token: token,
         latitude: pos.latitude,
         longitude: pos.longitude,
-        activity: 'periodic_sync',
+        activity: 'live_tracking',
       );
     } catch (e) {
       debugPrint("Location sync failed: $e");
@@ -135,7 +153,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                     Icon(Icons.search_rounded, color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), size: 18),
                     const SizedBox(width: 8),
                     Text(
-                      'Search collections...',
+                      context.translate('search_collections'),
                       style: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.5), fontSize: 13),
                     ),
                   ],
@@ -207,7 +225,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          'My Total Collection',
+                                          context.translate('my_total_collection'),
                                           style: GoogleFonts.outfit(
                                             color: Colors.black.withValues(alpha: 0.6),
                                             fontWeight: FontWeight.w600,
@@ -229,7 +247,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                                     const SizedBox(height: 12),
                                     Row(
                                       children: [
-                                        _buildCompactInfo('Goal: ₹${_stats['goal']}', Colors.white, Colors.black),
+                                        _buildCompactInfo('${context.translate('goal')}: ₹${_stats['goal']}', Colors.white, Colors.black),
                                         const SizedBox(width: 12),
                                         _buildCompactInfo(
                                           '${((_stats['collected'] / _stats['goal']) * 100).toStringAsFixed(1)}%', 
@@ -269,13 +287,13 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           children: [
-                            _buildModernActionTile(context, "My Stats", Icons.assessment_outlined, '/worker/performance', Colors.cyan),
+                            _buildModernActionTile(context, context.translate('my_stats'), Icons.assessment_outlined, '/worker/performance', Colors.cyan),
                             const SizedBox(width: 16),
-                            _buildModernActionTile(context, 'Customers', Icons.people_outline_rounded, '', Colors.teal, isCustom: true, onTap: () {
+                            _buildModernActionTile(context, context.translate('users'), Icons.people_outline_rounded, '', Colors.teal, isCustom: true, onTap: () {
                                Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerListScreen()));
                             }),
                             const SizedBox(width: 16),
-                            _buildModernActionTile(context, "History", Icons.history_rounded, '/agent/collections', Colors.blueGrey),
+                            _buildModernActionTile(context, context.translate('collection_history'), Icons.history_rounded, '/agent/collections', Colors.blueGrey),
                             const SizedBox(width: 16),
                             _buildModernActionTile(context, context.translate('daily_route'), Icons.map_outlined, '/agent/lines', Colors.purple),
                             const SizedBox(width: 16),
@@ -337,7 +355,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                               style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textColor),
                             ),
                             Text(
-                              'Track All',
+                              context.translate('track_all'),
                               style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                           ],
@@ -353,7 +371,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                               children: [
                                 Icon(Icons.history_toggle_off_rounded, color: Colors.grey[300], size: 48),
                                 const SizedBox(height: 16),
-                                Text("No recent collections", style: TextStyle(color: Colors.grey[400])),
+                                Text(context.translate('no_recent_collections'), style: TextStyle(color: Colors.grey[400])),
                               ],
                             ),
                           ),
@@ -403,7 +421,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                                     style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 16),
                                   ),
                                   Text(
-                                    'Recently',
+                                    context.translate('recently'),
                                     style: TextStyle(color: AppTheme.secondaryTextColor, fontSize: 10),
                                   ),
                                 ],

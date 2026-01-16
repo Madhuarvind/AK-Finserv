@@ -22,6 +22,7 @@ def get_user_by_identity(identity):
         user = query.filter(
             (User.mobile_number == str(identity))
             | (User.username == str(identity))
+            | (User.name == str(identity))
             | (User.id == identity)
         ).first()
     else:
@@ -29,6 +30,7 @@ def get_user_by_identity(identity):
         user = query.filter(
             (User.mobile_number == identity)
             | (User.username == identity)
+            | (User.name == identity)
         ).first()
         
     return user

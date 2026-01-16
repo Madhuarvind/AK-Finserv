@@ -40,6 +40,7 @@ import 'screens/public_passbook_screen.dart';
 import 'screens/admin/daily_reports_screen.dart';
 import 'screens/admin/live_tracking_screen.dart';
 import 'screens/face_enrollment_screen.dart';
+import 'screens/common/upi_payment_screen.dart';
 
 late List<CameraDescription> cameras;
 
@@ -164,6 +165,17 @@ class VasoolDriveApp extends StatelessWidget {
              return PublicPassbookScreen(token: args);
            }
            return const Scaffold(body: Center(child: Text('Error: Missing Token')));
+        },
+        '/collection/upi': (context) {
+           final args = ModalRoute.of(context)?.settings.arguments;
+           if (args is Map<String, dynamic>) {
+             return UPIPaymentScreen(
+               amount: args['amount'],
+               customerName: args['customer_name'],
+               loanId: args['loan_id'],
+             );
+           }
+           return const Scaffold(body: Center(child: Text('Error: Missing payment details')));
         },
       },
       onGenerateRoute: (settings) {

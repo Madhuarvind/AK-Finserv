@@ -4,6 +4,7 @@ import '../../utils/theme.dart';
 import '../../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 
 class LiveTrackingScreen extends StatefulWidget {
   const LiveTrackingScreen({super.key});
@@ -17,14 +18,29 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
   List<dynamic> _agents = [];
   bool _isLoading = true;
 
+  Timer? _refreshTimer;
+
   @override
   void initState() {
     super.initState();
     _fetchLocations();
+    _startAutoRefresh();
   }
 
-  Future<void> _fetchLocations() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      _fetchLocations(isAuto: true);
+    });
+  }
+
+  Future<void> _fetchLocations({bool isAuto = false}) async {
+    if (!isAuto) setState(() => _isLoading = true);
     final token = await _apiService.getToken();
     if (token != null) {
       final data = await _apiService.getFieldAgentsLocation(token);

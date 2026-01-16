@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
+import '../utils/localizations.dart';
+import '../utils/theme.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -26,8 +28,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    final bio = await _storage.read(key: 'biometrics_enabled');
-    final duty = await _storage.read(key: 'duty_status');
+    final name = await _storage.read(key: 'user_name');
+    final bio = await _storage.read(key: 'biometrics_enabled_$name');
+    final duty = await _storage.read(key: 'duty_status_$name');
     if (mounted) {
       setState(() {
         _biometricsEnabled = bio == 'true';
@@ -38,7 +41,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   }
 
   Future<void> _toggleBiometrics(bool val) async {
-    await _storage.write(key: 'biometrics_enabled', value: val.toString());
+    final name = await _storage.read(key: 'user_name');
+    await _storage.write(key: 'biometrics_enabled_$name', value: val.toString());
     setState(() => _biometricsEnabled = val);
   }
 
@@ -72,14 +76,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     );
 
     if (res['msg'] == 'tracking_updated') {
-      await _storage.write(key: 'duty_status', value: status);
+      final name = await _storage.read(key: 'user_name');
+      await _storage.write(key: 'duty_status_$name', value: status);
       setState(() {
         _trackingEnabled = val;
         _isLoading = false;
       });
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to update status")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('server_error'))));
         setState(() => _isLoading = false);
       }
     }
@@ -97,7 +102,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Security Hub",
+          context.translate('security_hub'),
           style: GoogleFonts.outfit(
             color: Colors.black,
             fontWeight: FontWeight.bold,
@@ -111,7 +116,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Authentication",
+              context.translate('authentication'),
               style: GoogleFonts.outfit(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -120,7 +125,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Manage how you access your account",
+              context.translate('manage_access'),
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 color: const Color(0xFF94A3B8),
@@ -130,8 +135,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             
             // Biometric Toggle Card
             _buildToggleCard(
-              "Biometric Login",
-              "Face or Fingerprint unlock",
+              context.translate('biometric_login'),
+              context.translate('biometric_login_desc'),
               Icons.fingerprint,
               _biometricsEnabled,
               (val) => _toggleBiometrics(val),
@@ -142,8 +147,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             const SizedBox(height: 16),
 
             _buildActionCard(
-              "Enroll/Update Face",
-              "Register your biometric profile",
+              context.translate('enroll_face_title'),
+              context.translate('enroll_face_desc'),
               Icons.face_retouching_natural_rounded,
               const Color(0xFFFEF3C7),
               const Color(0xFFD97706),
@@ -157,7 +162,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             const SizedBox(height: 32),
 
             Text(
-              "Field Operations",
+              context.translate('field_operations'),
               style: GoogleFonts.outfit(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -166,7 +171,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-               "Control live tracking and status",
+               context.translate('field_ops_desc'),
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 color: const Color(0xFF94A3B8),
@@ -176,8 +181,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             const SizedBox(height: 24),
 
             _buildToggleCard(
-              "Duty Status",
-              "Live location and activity sync",
+              context.translate('status'),
+              context.translate('duty_status_desc'),
               Icons.location_on_rounded,
               _trackingEnabled,
               (val) => _toggleTracking(val),
@@ -188,7 +193,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             const SizedBox(height: 32),
             
             Text(
-              "Account Protection",
+              context.translate('account_protection'),
               style: GoogleFonts.outfit(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -197,7 +202,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Security layers for your profile",
+              context.translate('security_layers'),
               style: GoogleFonts.outfit(
                 fontSize: 14,
                 color: const Color(0xFF94A3B8),
@@ -209,8 +214,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             
             // Device Management Card
             _buildActionCard(
-              "Change Login PIN",
-              "Last changed 30 days ago",
+              context.translate('reset_pin'),
+              context.translate('change_pin_desc'),
               Icons.password_rounded,
               const Color(0xFFF5F3FF),
               const Color(0xFF8B5CF6),
@@ -218,8 +223,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             ),
             const SizedBox(height: 16),
             _buildActionCard(
-              "Device Management",
-              "2 active sessions",
+              context.translate('device_monitoring'),
+              "2 ${context.translate('device_mgmt_desc')}",
               Icons.devices,
               const Color(0xFFECFDF5),
               const Color(0xFF10B981),

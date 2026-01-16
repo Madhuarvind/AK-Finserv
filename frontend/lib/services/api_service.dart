@@ -110,10 +110,15 @@ class ApiService {
           'pin': pin,
           if (deviceId != null) 'device_id': deviceId
         }),
-      ).timeout(const Duration(seconds: 10));
-      return jsonDecode(response.body);
+      ).timeout(const Duration(seconds: 20));
+      
+      final data = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        return {'msg': data['msg'] ?? 'server_error', 'details': data['error'] ?? 'No details'};
+      }
+      return data;
     } catch (e) {
-      debugPrint('API Error: $e');
+      debugPrint('Login Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
@@ -1441,10 +1446,16 @@ class ApiService {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode(data),
-      ).timeout(const Duration(seconds: 10));
-      return jsonDecode(response.body);
+      ).timeout(const Duration(seconds: 20));
+      
+      final body = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        return {'msg': body['msg'] ?? 'approval_failed', 'status': response.statusCode};
+      }
+      return body;
     } catch (e) {
-      return {'msg': 'connection_failed'};
+      debugPrint('Approve Loan Error: $e');
+      return {'msg': 'connection_failed', 'details': e.toString()};
     }
   }
 

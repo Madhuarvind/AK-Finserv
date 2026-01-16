@@ -60,7 +60,7 @@ class AppDrawer extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        isAdmin ? 'Administrator' : 'Field Agent',
+                        isAdmin ? context.translate('administrator') : context.translate('field_agent_role'),
                         style: GoogleFonts.outfit(
                           fontSize: 12,
                           color: AppTheme.secondaryTextColor,
@@ -151,7 +151,7 @@ class AppDrawer extends StatelessWidget {
                   _buildDrawerItem(
                     context,
                     icon: Icons.contacts_outlined,
-                    label: 'Customer Management',
+                    label: context.translate('customer_management'),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/admin/customers');
@@ -223,7 +223,7 @@ class AppDrawer extends StatelessWidget {
                     _buildDrawerItem(
                       context,
                       icon: Icons.storage_rounded,
-                      label: 'Database Viewer',
+                      label: context.translate('database_viewer'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/admin/db_viewer');
@@ -233,7 +233,7 @@ class AppDrawer extends StatelessWidget {
                   _buildDrawerItem(
                     context,
                     icon: Icons.assessment_outlined,
-                    label: 'My AI Performance',
+                    label: context.translate('my_ai_performance'),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/worker/performance');
@@ -251,7 +251,7 @@ class AppDrawer extends StatelessWidget {
                   _buildDrawerItem(
                     context,
                     icon: Icons.people_outline_rounded,
-                    label: 'Customer Management',
+                    label: context.translate('customer_management'),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerListScreen()));

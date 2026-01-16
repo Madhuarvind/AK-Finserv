@@ -399,9 +399,20 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
                 const SizedBox(height: 16),
                 Center(
                   child: ElevatedButton.icon(
-                    onPressed: () => _showQRCodeDialog(context),
+                    onPressed: () {
+                      final amount = double.tryParse(_amountController.text) ?? 0.0;
+                      if (amount <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Enter a valid amount first")));
+                        return;
+                      }
+                      Navigator.pushNamed(context, '/collection/upi', arguments: {
+                        'amount': amount,
+                        'customer_name': _selectedCustomer?['name'] ?? 'Unknown',
+                        'loan_id': _selectedLoan?['loan_id']?.toString() ?? _selectedLoan?['id']?.toString() ?? 'N/A',
+                      });
+                    },
                     icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                    label: const Text("SHOW QR CODE"),
+                    label: const Text("GENERATE DYNAMIC QR"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.indigo[900],
                       foregroundColor: Colors.white,

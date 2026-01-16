@@ -26,7 +26,8 @@ def create_line():
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     data = request.get_json()
@@ -60,7 +61,8 @@ def create_line():
 def get_all_lines():
     identity = get_jwt_identity()
     user = get_user_by_identity(identity) # Admins see all lines, Agents see only their assigned lines
-    if user.role == UserRole.ADMIN:
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    if current_role == "admin" or current_role == UserRole.ADMIN.value:
         lines = Line.query.all()
     else:
         lines = Line.query.filter_by(agent_id=user.id).all()
@@ -92,7 +94,8 @@ def update_line(line_id):
     identity = get_jwt_identity()
     user = get_user_by_identity(identity)
 
-    if not user or user.role != UserRole.ADMIN:
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    if not user or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     line = Line.query.get(line_id)
@@ -125,7 +128,8 @@ def assign_agent(line_id):
     identity = get_jwt_identity()
     user = get_user_by_identity(identity)
 
-    if not user or user.role != UserRole.ADMIN:
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    if not user or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     data = request.get_json()
@@ -182,8 +186,10 @@ def add_customer_to_line(line_id):
         return jsonify({"msg": "customer_already_in_line"}), 400
 
     # Calculate current max sequence
+    max_seq = 0
     max_seq_mapping = LineCustomer.query.filter_by(line_id=line_id).order_by(LineCustomer.sequence_order.desc()).first()
-    max_seq = max_seq_mapping.sequence_order if max_seq_mapping else 0
+    if max_seq_mapping:
+        max_seq = max_seq_mapping.sequence_order
 
     new_mapping = LineCustomer(
         line_id=line_id, customer_id=customer_id, sequence_order=max_seq + 1
@@ -263,7 +269,8 @@ def reorder_line_customers(line_id):
         return jsonify({"msg": "Line not found"}), 404
     
     # Allow Admin OR the assigned agent to reorder
-    if user.role != UserRole.ADMIN and line.agent_id != user.id:
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    if current_role != "admin" and current_role != UserRole.ADMIN.value and line.agent_id != user.id:
         return jsonify({"msg": "Access Denied"}), 403
 
     data = request.get_json()
@@ -289,7 +296,8 @@ def toggle_line_lock(line_id):
     identity = get_jwt_identity()
     user = get_user_by_identity(identity)
 
-    if not user or user.role != UserRole.ADMIN:
+    current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
+    if not user or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     line = Line.query.get(line_id)
@@ -393,7 +401,8 @@ def bulk_reassign_agent():
     identity = get_jwt_identity()
     admin = get_user_by_identity(identity)
 
-    if not admin or admin.role != UserRole.ADMIN:
+    current_role = admin.role.value if hasattr(admin.role, 'value') else str(admin.role)
+    if not admin or (current_role != "admin" and current_role != UserRole.ADMIN.value):
         return jsonify({"msg": "Access Denied"}), 403
 
     data = request.get_json()

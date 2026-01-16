@@ -31,8 +31,8 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
   }
 
   Future<void> _checkBiometrics() async {
-    final bioToken = await _storage.read(key: 'biometrics_enabled');
     final name = await _storage.read(key: 'user_name');
+    final bioToken = await _storage.read(key: 'biometrics_enabled_$name');
     final token = await _storage.read(key: 'jwt_token');
     
     // Only allow biometric button if:

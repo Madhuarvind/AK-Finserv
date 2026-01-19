@@ -70,7 +70,7 @@ class _AgentPerformanceScreenState extends State<AgentPerformanceScreen> {
                   const SizedBox(height: 16),
                   _buildInsightCard(
                     "Collection Velocity",
-                    "Your average collection speed is optimal. Try to cover the remaining ${(_stats['goal'] - _stats['collected']).toStringAsFixed(0)} INR this week.",
+                    "Your average collection speed is optimal. Try to cover the remaining ${((goal - collected) > 0 ? (goal - collected) : 0).toStringAsFixed(0)} INR this week.",
                     Icons.speed_rounded,
                     Colors.blue,
                   ),

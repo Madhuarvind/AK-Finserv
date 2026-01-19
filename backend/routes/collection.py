@@ -569,6 +569,16 @@ def get_agent_stats():
         or 0
     )
 
+    # Calculate Today's Collection (Including Pending/Flagged to show immediate progress)
+    today = datetime.utcnow().date()
+    today_collected = (
+        db.session.query(db.func.sum(Collection.amount))
+        .filter(Collection.agent_id == user.id)
+        .filter(db.func.date(Collection.created_at) == today)
+        .scalar()
+        or 0
+    )
+
     # In a real app, 'goal' might come from a performance table
     # For now, we return a mock goal or calculate based on assigned loans
     goal = 50000.0
@@ -577,6 +587,7 @@ def get_agent_stats():
         jsonify(
             {
                 "collected": float(total_collected),
+                "today_collected": float(today_collected),
                 "goal": goal,
                 "currency": "INR",
                 "timestamp": datetime.utcnow().isoformat(),

@@ -564,7 +564,10 @@ def get_agent_stats():
 
     total_collected = (
         db.session.query(db.func.sum(Collection.amount))
-        .filter_by(agent_id=user.id, status="approved")
+        .filter(
+            Collection.agent_id == user.id,
+            Collection.status.in_(["approved", "pending", "flagged"])
+        )
         .scalar()
         or 0
     )

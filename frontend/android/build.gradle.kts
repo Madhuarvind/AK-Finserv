@@ -1,5 +1,7 @@
 allprojects {
     repositories {
+        maven { url = uri("http://maven.aliyun.com/repository/google"); isAllowInsecureProtocol = true }
+        maven { url = uri("http://maven.aliyun.com/repository/public"); isAllowInsecureProtocol = true }
         google()
         mavenCentral()
         maven { url = uri("https://download.flutter.io") }

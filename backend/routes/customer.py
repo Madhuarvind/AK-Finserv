@@ -246,9 +246,16 @@ def list_customers():
 
     query = Customer.query
 
-    # RLS: Workers only see their own customers
+    # RLS: Workers only see their own customers (Direct or via Lines)
     if user.role == UserRole.FIELD_AGENT:
-        query = query.filter(Customer.assigned_worker_id == user.id)
+        from models import Line, LineCustomer
+        query = query.distinct().outerjoin(
+            LineCustomer, Customer.id == LineCustomer.customer_id
+        ).outerjoin(
+            Line, LineCustomer.line_id == Line.id
+        ).filter(
+            (Customer.assigned_worker_id == user.id) | (Line.agent_id == user.id)
+        )
 
     if search:
         search_term = f"%{search}%"

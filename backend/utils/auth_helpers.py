@@ -40,12 +40,8 @@ def get_admin_user():
     user = get_user_by_identity(identity)
     
     if user:
-         # Normalize role check (handles Enum vs String and case sensitivity)
-         current_role = user.role.value if hasattr(user.role, 'value') else str(user.role)
-         current_role_lower = current_role.lower()
-         
-         acceptable_roles = ["admin", "administrator", "owner", "superadmin"]
-         
-         if current_role_lower in acceptable_roles:
+         # Normalize role check (handles Enum vs String)
+         current_role = user.role.value if hasattr(user.role, 'value') else user.role
+         if current_role == "admin" or current_role == UserRole.ADMIN.value:
              return user
     return None

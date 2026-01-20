@@ -22,7 +22,7 @@ def get_user_by_identity(identity):
         user = query.filter(
             (User.mobile_number == str(identity))
             | (User.username == str(identity))
-            | (User.name.ilike(str(identity)))
+            | (User.name == str(identity))
             | (User.id == identity)
         ).first()
     else:
@@ -30,18 +30,7 @@ def get_user_by_identity(identity):
         user = query.filter(
             (User.mobile_number == identity)
             | (User.username == identity)
-            | (User.name.ilike(identity))
+            | (User.name == identity)
         ).first()
         
-
-def get_admin_user():
-    from flask_jwt_extended import get_jwt_identity
-    identity = get_jwt_identity()
-    user = get_user_by_identity(identity)
-    
-    if user:
-        # Normalize role check (handles Enum vs String)
-        role_val = user.role.value if hasattr(user.role, 'value') else str(user.role)
-        if str(role_val).lower() == "admin":
-            return user
-    return None
+    return user

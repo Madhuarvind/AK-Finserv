@@ -96,10 +96,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final imageBytes = (kIsWeb && _webImageBytes != null) 
-          ? _webImageBytes! 
-          : await _imageFile!.readAsBytes();
-          
+      final imageBytes = await _imageFile!.readAsBytes();
       final token = await _storage.read(key: 'jwt_token');
       
       if (token != null) {
@@ -125,13 +122,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Critical Error: $e"),
-          duration: const Duration(seconds: 10),
-          action: SnackBarAction(label: "DISMISS", onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar()),
-        )
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
     if (mounted) setState(() => _isLoading = false);
   }

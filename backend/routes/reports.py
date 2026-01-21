@@ -457,19 +457,9 @@ def get_line_report(line_id):
         customer_ids = [lc.customer_id for lc in line_customers]
 
         # Get all collections for these customers in this line and period
-        collections = Collection.query.filter(
-            Collection.line_id == line_id,
-            Collection.customer_id.in_(
-                customer_ids
-            ),  # Optimization: use relationship if possible
-            Collection.created_at >= start_date,
-            Collection.created_at <= end_date,
-            Collection.status != "rejected",
-        ).all()
+        # Get all collections for these customers in this line and period
+        # Use simple join through Loan to get to Customer
 
-        # Actually, our Collection model might not have customer_id directly (it has loan_id)
-        # Let's verify Collection model logic. It has loan_id.
-        # We need to join Collection with Loan to get customer_id.
 
         collections = (
             db.session.query(Collection)

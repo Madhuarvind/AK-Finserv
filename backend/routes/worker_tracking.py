@@ -48,12 +48,8 @@ def get_field_map():
         return jsonify({"msg": "unauthorized"}), 403
         
     # Query agents more robustly (handle enum vs string)
-    agents = User.query.filter(
-        db.or_(
-            User.role == UserRole.FIELD_AGENT,
-            User.role == "field_agent"
-        )
-    ).all()
+    # Safe for Postgres Enum types
+    agents = User.query.filter(User.role == UserRole.FIELD_AGENT).all()
     
     result = []
     for agent in agents:

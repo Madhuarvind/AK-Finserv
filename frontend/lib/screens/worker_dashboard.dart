@@ -47,11 +47,21 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
 
   void _startTrackingTimer() {
     _trackingTimer?.cancel();
-    // Reduce to 1 minute for better "Live Tracking"
     _trackingTimer = Timer.periodic(const Duration(minutes: 1), (timer) async {
+      final now = DateTime.now();
+      
+      // -- SESSION LOGIC --
+      // Morning: 06:00 to 15:00 (3pm)
+      // Evening: 16:00 to 23:00 (11pm)
+      bool isInMorningSession = now.hour >= 6 && now.hour < 15;
+      bool isInEveningSession = now.hour >= 16 && now.hour < 23;
+      
       final name = await _storage.read(key: 'user_name');
-      final dutyStatus = await _storage.read(key: 'duty_status_$name');
-      if (dutyStatus == 'on_duty') {
+      String? dutyStatus = await _storage.read(key: 'duty_status_$name');
+      
+      // Auto-logic: If in session, we FORCE sync even if they didn't manually toggle.
+      // If NOT in session, only sync if they explicitly stayed on_duty.
+      if (isInMorningSession || isInEveningSession || dutyStatus == 'on_duty') {
         _syncLocation();
       }
     });

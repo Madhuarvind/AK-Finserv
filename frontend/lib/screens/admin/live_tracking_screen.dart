@@ -65,6 +65,98 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     }
   }
 
+  Future<void> _viewHistory(int agentId, String name) async {
+    final token = await _apiService.getToken();
+    if (token == null) return;
+
+    if (mounted) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: const Color(0xFF1E293B),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+        isScrollControlled: true,
+        builder: (context) => DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) => Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  "Timeline: $name",
+                  style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+              Expanded(
+                child: FutureBuilder<List<dynamic>>(
+                  future: _apiService.getAgentHistory(agentId, token),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(child: Text("No movement history found for today", style: TextStyle(color: Colors.white54)));
+                    }
+                    
+                    final history = snapshot.data!;
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: history.length,
+                      itemBuilder: (context, idx) {
+                        final log = history[idx];
+                        final time = DateFormat('hh:mm a').format(DateTime.parse(log['timestamp']).toLocal());
+                        
+                        return ListTile(
+                          leading: const Icon(Icons.location_on_outlined, color: AppTheme.primaryColor),
+                          title: Text(time, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          subtitle: Text("Activity: ${log['activity']}", style: const TextStyle(color: Colors.white54)),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.map_rounded, color: Colors.white70),
+                            onPressed: () => _openMap(log['latitude'], log['longitude'], name),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+               Padding(
+                 padding: const EdgeInsets.all(20),
+                 child: SizedBox(
+                   width: double.infinity,
+                   child: ElevatedButton.icon(
+                     onPressed: () async {
+                       final hist = await _apiService.getAgentHistory(agentId, token);
+                       if (hist.isNotEmpty) {
+                         // Simple origin-destination path
+                         _openMap(hist.first['latitude'], hist.first['longitude'], "$name (Start)");
+                       }
+                     },
+                     icon: const Icon(Icons.route_rounded),
+                     label: const Text("VIEW STARTING POINT"),
+                     style: ElevatedButton.styleFrom(
+                       backgroundColor: Colors.white12,
+                       foregroundColor: Colors.white,
+                       padding: const EdgeInsets.symmetric(vertical: 16),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                     ),
+                   ),
+                 ),
+               ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,37 +254,39 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                           ],
                         ),
                         Divider(height: 32, color: Colors.white.withValues(alpha: 0.1)),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: agent['latitude'] != null
-                                        ? () => _openMap(agent['latitude'], agent['longitude'], agent['name'])
-                                        : null,
-                                    icon: const Icon(Icons.map_rounded),
-                                    label: Text(agent['latitude'] != null ? "VIEW ON MAP" : "GPS NOT READY"),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.primaryColor,
-                                      foregroundColor: Colors.black,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                    ),
-                                  ),
-                                  if (agent['latitude'] == null)
-                                    const Padding(
-                                      padding: EdgeInsets.only(top: 8),
-                                      child: Text(
-                                        "Waiting for active sync...",
-                                        style: TextStyle(fontSize: 10, color: Colors.white30, fontStyle: FontStyle.italic),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: agent['latitude'] != null
+                                            ? () => _openMap(agent['latitude'], agent['longitude'], agent['name'])
+                                            : null,
+                                        icon: const Icon(Icons.map_rounded),
+                                        label: Text(agent['latitude'] != null ? "VIEW MAP" : "GPS OFF"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.primaryColor,
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        ),
                                       ),
                                     ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => _viewHistory(agent['id'], agent['name']),
+                                        icon: const Icon(Icons.history_rounded),
+                                        label: const Text("TIMELINE"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                       ],
                     ),
                   );

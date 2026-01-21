@@ -1805,4 +1805,23 @@ class ApiService {
       return {'msg': 'connection_failed'};
     }
   }
+  Future<List<dynamic>> getAgentHistory(int agentId, String token, {String? date}) async {
+    try {
+      String url = '$_apiBase/worker/agent-history/$agentId';
+      if (date != null) url += '?date=$date';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 15));
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getAgentHistory Error: $e');
+      return [];
+    }
+  }
 }

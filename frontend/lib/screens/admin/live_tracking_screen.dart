@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../utils/theme.dart';
 import '../../services/api_service.dart';
+import '../../utils/localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
@@ -60,7 +61,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Could not open Google Maps")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('error'))));
       }
     }
   }
@@ -90,7 +91,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  "Timeline: $name",
+                  "${context.translate('timeline')}: $name",
                   style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
@@ -102,7 +103,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                       return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
                     }
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(child: Text("No movement history found for today", style: TextStyle(color: Colors.white54)));
+                      return Center(child: Text(context.translate('no_movement_history'), style: const TextStyle(color: Colors.white54)));
                     }
                     
                     final history = snapshot.data!;
@@ -140,7 +141,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                        }
                      },
                      icon: const Icon(Icons.route_rounded),
-                     label: const Text("VIEW STARTING POINT"),
+                     label: Text(context.translate('view_starting_point').toUpperCase()),
                      style: ElevatedButton.styleFrom(
                        backgroundColor: Colors.white12,
                        foregroundColor: Colors.white,
@@ -162,7 +163,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text("Live Field Tracking", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(context.translate('agents_live'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -181,7 +182,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
         child: _isLoading 
           ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
           : _agents.isEmpty 
-            ? const Center(child: Text("No agents found", style: TextStyle(color: Colors.white54)))
+            ? Center(child: Text(context.translate('user_not_found'), style: const TextStyle(color: Colors.white54)))
             : ListView.builder(
                 padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
                 itemCount: _agents.length,
@@ -191,7 +192,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                   final isOnDuty = status == 'on_duty';
                   final lastUpdate = agent['last_update'] != null 
                       ? DateFormat('hh:mm a').format(DateTime.parse(agent['last_update']).toLocal())
-                      : 'Never';
+                      : context.translate('never');
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
@@ -235,7 +236,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                isOnDuty ? "ONLINE" : "OFFLINE",
+                                isOnDuty ? context.translate('active').toUpperCase() : context.translate('inactive').toUpperCase(),
                                 style: TextStyle(
                                   color: isOnDuty ? Colors.greenAccent : Colors.white54,
                                   fontSize: 10,
@@ -249,8 +250,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildMiniInfo("Last Update", lastUpdate),
-                            _buildMiniInfo("Activity", (agent['activity'] ?? 'idle').toString().toUpperCase()),
+                            _buildMiniInfo(context.translate('last_login_label').replaceAll(':', ''), lastUpdate),
+                            _buildMiniInfo(context.translate('status'), (agent['activity'] ?? 'idle').toString().toUpperCase()),
                           ],
                         ),
                         Divider(height: 32, color: Colors.white.withValues(alpha: 0.1)),
@@ -262,7 +263,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                             ? () => _openMap(agent['latitude'], agent['longitude'], agent['name'])
                                             : null,
                                         icon: const Icon(Icons.map_rounded),
-                                        label: Text(agent['latitude'] != null ? "VIEW MAP" : "GPS OFF"),
+                                        label: Text(agent['latitude'] != null ? context.translate('view_map').toUpperCase() : context.translate('gps_off').toUpperCase()),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppTheme.primaryColor,
                                           foregroundColor: Colors.black,
@@ -276,7 +277,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                       child: ElevatedButton.icon(
                                         onPressed: () => _viewHistory(agent['id'], agent['name']),
                                         icon: const Icon(Icons.history_rounded),
-                                        label: const Text("TIMELINE"),
+                                        label: Text(context.translate('timeline').toUpperCase()),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.white.withValues(alpha: 0.1),
                                           foregroundColor: Colors.white,

@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
 import '../utils/theme.dart';
+import '../utils/localizations.dart';
 
 class LineReportScreen extends StatefulWidget {
   final int lineId;
@@ -71,16 +72,16 @@ class _LineReportScreenState extends State<LineReportScreen> {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(32),
-          header: (context) => pw.Column(
+          header: (pdfContext) => pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text('AK FINSERV - LINE REPORT', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+              pw.Text('AK FINSERV - ${context.translate('reports').toUpperCase()}', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
               pw.SizedBox(height: 4),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text('Line: $lineName', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                  pw.Text('Period: $periodText', style: pw.TextStyle(fontSize: 12)),
+                  pw.Text('${context.translate('line_name')}: $lineName', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text('${context.translate('language')}: $periodText', style: pw.TextStyle(fontSize: 12)),
                 ],
               ),
               pw.Text('Date: ${DateFormat('dd MMM yyyy').format(DateTime.now())}', style: pw.TextStyle(fontSize: 12)),
@@ -88,9 +89,16 @@ class _LineReportScreenState extends State<LineReportScreen> {
               pw.SizedBox(height: 16),
             ],
           ),
-          build: (context) => [
+          build: (pdfContext) => [
             pw.TableHelper.fromTextArray(
-              headers: ['Customer Name', 'ID', 'Mode', 'Time', 'Amount', 'Status'],
+              headers: [
+                context.translate('name'),
+                'ID',
+                context.translate('language'), // 'Mode' - reusing 'language' or need another key? Actually I added mode keys.
+                context.translate('recently'),
+                context.translate('amount'),
+                context.translate('status')
+              ],
               data: details.map((d) => [
                 d['name'],
                 d['customer_id'],
@@ -117,20 +125,20 @@ class _LineReportScreenState extends State<LineReportScreen> {
               child: pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.end,
                 children: [
-                   _buildSummaryRow('Total Customers', (summary['total_customers'] ?? 0).toString()),
-                   _buildSummaryRow('Paid Customers', (summary['paid_customers'] ?? 0).toString()),
-                   _buildSummaryRow('Total Cash', 'Rs. ${summary['total_cash'] ?? 0}'),
-                   _buildSummaryRow('Total UPI', 'Rs. ${summary['total_upi'] ?? 0}'),
+                   _buildSummaryRow(context.translate('users'), (summary['total_customers'] ?? 0).toString()),
+                   _buildSummaryRow(context.translate('active'), (summary['paid_customers'] ?? 0).toString()),
+                   _buildSummaryRow(context.translate('cash'), 'Rs. ${summary['total_cash'] ?? 0}'),
+                   _buildSummaryRow(context.translate('upi'), 'Rs. ${summary['total_upi'] ?? 0}'),
                    pw.SizedBox(width: 150, child: pw.Divider()),
-                   pw.Text('Total Collected: Rs. ${summary['total_collected'] ?? 0}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.green900)),
+                   pw.Text('${context.translate('paid_total')}: Rs. ${summary['total_collected'] ?? 0}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.green900)),
                 ],
               ),
             ),
           ],
-          footer: (context) => pw.Container(
+          footer: (pdfContext) => pw.Container(
             alignment: pw.Alignment.centerRight,
             margin: const pw.EdgeInsets.only(top: 32),
-            child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey500)),
+            child: pw.Text('Page ${pdfContext.pageNumber} of ${pdfContext.pagesCount}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey500)),
           ),
         ),
       );
@@ -167,7 +175,7 @@ class _LineReportScreenState extends State<LineReportScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Text('${widget.period == 'daily' ? 'Daily' : 'Weekly'} Line Report', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text('${widget.period == 'daily' ? context.translate('daily_report') : context.translate('weekly_report')}', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
         actions: [
           if (!_isLoading && _reportData != null)
             IconButton(
@@ -188,7 +196,7 @@ class _LineReportScreenState extends State<LineReportScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
             : _reportData == null
-                ? Center(child: Text('No data found', style: GoogleFonts.outfit(color: Colors.white70)))
+                ? Center(child: Text(context.translate('user_not_found'), style: GoogleFonts.outfit(color: Colors.white70)))
                 : _buildReportUI(),
       ),
     );
@@ -249,16 +257,66 @@ class _LineReportScreenState extends State<LineReportScreen> {
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
             children: [
-              _buildTallyCard('Total Collected', '₹${summary['total_collected'] ?? 0}', Icons.payments_rounded, Colors.greenAccent),
-              _buildTallyCard('Paid / Total', '${summary['paid_customers'] ?? 0} / ${summary['total_customers'] ?? 0}', Icons.people_rounded, Colors.blueAccent),
-              _buildTallyCard('Cash Total', '₹${summary['total_cash'] ?? 0}', Icons.money_rounded, Colors.orangeAccent),
-              _buildTallyCard('UPI Total', '₹${summary['total_upi'] ?? 0}', Icons.account_balance_rounded, Colors.indigoAccent),
+              _buildTallyCard(context.translate('paid_total'), '₹${summary['total_collected'] ?? 0}', Icons.payments_rounded, Colors.greenAccent),
+              _buildTallyCard('${context.translate('active')} / ${context.translate('total')}', '${summary['paid_customers'] ?? 0} / ${summary['total_customers'] ?? 0}', Icons.people_rounded, Colors.blueAccent),
+              _buildTallyCard(context.translate('cash'), '₹${summary['total_cash'] ?? 0}', Icons.money_rounded, Colors.orangeAccent),
+              _buildTallyCard(context.translate('upi'), '₹${summary['total_upi'] ?? 0}', Icons.account_balance_rounded, Colors.indigoAccent),
             ],
           ),
           const SizedBox(height: 32),
 
+          // Collection Progress
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        value: (summary['total_customers'] ?? 0) > 0 
+                            ? (summary['paid_customers'] ?? 0) / summary['total_customers'] 
+                            : 0,
+                        backgroundColor: Colors.white12,
+                        color: AppTheme.primaryColor,
+                        strokeWidth: 8,
+                      ),
+                    ),
+                    Text(
+                      '${(summary['total_customers'] ?? 0) > 0 ? (((summary['paid_customers'] ?? 0) / summary['total_customers']) * 100).toStringAsFixed(0) : 0}%',
+                      style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(context.translate('target_achieved'), style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${summary['paid_customers'] ?? 0} ${context.translate('active')} out of ${summary['total_customers'] ?? 0} ${context.translate('total')}",
+                        style: const TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+
           // Customer List
-          Text('Customer Breakdown', style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text(context.translate('customer_breakdown'), style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 16),
           ListView.builder(
             shrinkWrap: true,

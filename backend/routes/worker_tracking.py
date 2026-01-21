@@ -65,3 +65,55 @@ def get_field_map():
         })
         
     return jsonify(result), 200
+
+@tracking_bp.route("/self-enroll-biometric", methods=["POST"])
+@jwt_required()
+def self_enroll_biometric():
+    """Worker self-enrollment of face data"""
+    try:
+        identity = get_jwt_identity()
+        user = get_user_by_identity(identity)
+        
+        if not user:
+            return jsonify({"msg": "user_not_found"}), 404
+            
+        data = request.get_json()
+        embedding = data.get("embedding")
+        device_id = data.get("device_id")
+        
+        if not embedding:
+            return jsonify({"msg": "missing_embedding"}), 400
+            
+        from models import FaceEmbedding, Device
+        
+        # Remove old embedding
+        FaceEmbedding.query.filter_by(user_id=user.id).delete()
+        
+        new_face = FaceEmbedding(
+            user_id=user.id,
+            embedding_data=embedding,
+            device_id=device_id
+        )
+        db.session.add(new_face)
+        
+        # Also trust this device if provided
+        if device_id:
+            device = Device.query.filter_by(user_id=user.id, device_id=device_id).first()
+            if not device:
+                device = Device(
+                    user_id=user.id,
+                    device_id=device_id,
+                    device_name="Worker Device",
+                    is_trusted=True
+                )
+                db.session.add(device)
+            else:
+                device.is_trusted = True
+                device.last_active = datetime.utcnow()
+        
+        db.session.commit()
+        return jsonify({"msg": "face_enrolled"}), 200
+        
+    except Exception as e:
+        print(f"Enrollment Error: {e}")
+        return jsonify({"msg": "server_error", "error": str(e)}), 500

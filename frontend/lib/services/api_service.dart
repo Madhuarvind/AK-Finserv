@@ -1444,7 +1444,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> approveLoan(int id, Map<String, dynamic> data, String token) async {
+  Future<Map<String, dynamic>> approveLoan(int id, String token, {String? startDate}) async {
     try {
       final response = await http.patch(
         Uri.parse('$_apiBase/loan/$id/approve'),
@@ -1452,7 +1452,7 @@ class ApiService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(data),
+        body: jsonEncode({'start_date': startDate}),
       ).timeout(const Duration(seconds: 20));
       
       final body = jsonDecode(response.body);
@@ -1463,6 +1463,42 @@ class ApiService {
     } catch (e) {
       debugPrint('Approve Loan Error: $e');
       return {'msg': 'connection_failed', 'details': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> runOverdueCheck(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_apiBase/loan/automation/run-overdue-check'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 30));
+      return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('runOverdueCheck Error: $e');
+      return {'msg': 'connection_failed', 'details': e.toString()};
+    }
+  }
+
+  Future<List<dynamic>> getAllLoans(String token, {String? status}) async {
+    try {
+      String url = '$_apiBase/loan/all';
+      if (status != null) url += '?status=$status';
+
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 15));
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return [];
+    } catch (e) {
+      debugPrint('getAllLoans Error: $e');
+      return [];
     }
   }
 
@@ -1838,4 +1874,5 @@ class ApiService {
       return [];
     }
   }
+
 }

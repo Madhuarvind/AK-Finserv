@@ -108,23 +108,14 @@ class AppDrawer extends StatelessWidget {
                       Navigator.pushNamed(context, '/profile');
                     },
                   ),
-                  _buildDrawerItem(
-                    context,
-                    icon: Icons.security_rounded,
-                    label: context.translate('security_hub'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, '/security');
-                    },
-                  ),
                   if (isAdmin) ...[
                     _buildDrawerItem(
                       context,
-                      icon: Icons.check_circle_outline_rounded,
-                      label: context.translate('loan_approvals'),
+                      icon: Icons.monetization_on_outlined,
+                      label: "Loan Management",
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, '/admin/loan_approvals');
+                        Navigator.pushNamed(context, '/admin/loan_management');
                       },
                     ),
                     _buildDrawerItem(
@@ -147,11 +138,29 @@ class AppDrawer extends StatelessWidget {
                     ),
                     _buildDrawerItem(
                       context,
-                      icon: Icons.people_outline_rounded,
-                      label: context.translate('user_management'),
+                      icon: Icons.qr_code_scanner_rounded,
+                      label: context.translate('qr_scan'),
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, '/admin/user_management');
+                        Navigator.pushNamed(context, '/admin/qr_scan');
+                      },
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.map_rounded,
+                      label: "Live Tracking",
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/admin/tracking');
+                      },
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.bolt_rounded,
+                      label: "Operations",
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/admin/optimization');
                       },
                     ),
                     _buildDrawerItem(
@@ -170,6 +179,42 @@ class AppDrawer extends StatelessWidget {
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/admin/lines');
+                      },
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.assessment_outlined,
+                      label: "Reports",
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/admin/reports');
+                      },
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.history_rounded,
+                      label: "Daily Reports",
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/admin/daily_reports');
+                      },
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.storage_rounded,
+                      label: context.translate('database_viewer'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/admin/db_viewer');
+                      },
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      icon: Icons.people_outline_rounded,
+                      label: context.translate('user_management'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/admin/user_management');
                       },
                     ),
                     _buildDrawerItem(
@@ -199,42 +244,6 @@ class AppDrawer extends StatelessWidget {
                         Navigator.pushNamed(context, '/admin/financial_stats');
                       },
                     ),
-                    _buildDrawerItem(
-                      context,
-                      icon: Icons.shield_outlined,
-                      label: context.translate('security_compliance'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/admin/security');
-                      },
-                    ),
-                    _buildDrawerItem(
-                      context,
-                      icon: Icons.assignment_outlined,
-                      label: context.translate('audit_logs'),
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushNamed(context, '/admin/audit_logs');
-                      },
-                    ),
-                      _buildDrawerItem(
-                        context,
-                        icon: Icons.settings_suggest_rounded,
-                        label: context.translate('system_configuration'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, '/admin/master_settings');
-                        },
-                      ),
-                      _buildDrawerItem(
-                        context,
-                        icon: Icons.storage_rounded,
-                        label: context.translate('database_viewer'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.pushNamed(context, '/admin/db_viewer');
-                        },
-                      ),
                   ] else ...[
                     _buildDrawerItem(
                       context,

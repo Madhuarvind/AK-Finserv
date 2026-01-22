@@ -134,6 +134,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Color(0xFF16A34A),
                     () => Navigator.pushNamed(context, '/admin/master_settings')
                   ),
+                  const SizedBox(height: 16),
+                  _buildActionCard(
+                    context,
+                    "Audit Logs",
+                    "VIEW ALL SYSTEM ACTIVITIES",
+                    Icons.assignment_outlined,
+                    Colors.orangeAccent,
+                    () => Navigator.pushNamed(context, '/admin/audit_logs')
+                  ),
                 ],
               ],
             ),

@@ -202,7 +202,7 @@ class _LoanApprovalScreenState extends State<LoanApprovalScreen> {
     if (picked != null) {
       final token = await _storage.read(key: 'jwt_token');
       if (token != null) {
-        final result = await _apiService.approveLoan(loan['id'], {'start_date': picked.toIsoformat()}, token);
+        final result = await _apiService.approveLoan(loan['id'], token, startDate: picked.toIsoformat());
         if (mounted) {
           if (result.containsKey('msg')) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Loan Approved Successfully"), backgroundColor: Colors.green));

@@ -14,7 +14,7 @@ import 'screens/settings_screen.dart';
 import 'screens/admin/master_settings_screen.dart';
 import 'screens/admin/risk_prediction_screen.dart';
 import 'screens/admin/optimization_dashboard.dart';
-import 'screens/admin/security_compliance_screen.dart';
+// import 'screens/admin/security_compliance_screen.dart'; // Consolidated into Security Hub
 import 'screens/worker_dashboard.dart';
 import 'screens/profile_screen.dart';
 import 'screens/security_settings_screen.dart';
@@ -29,7 +29,8 @@ import 'package:camera/camera.dart';
 import 'screens/admin/manage_lines_screen.dart';
 import 'screens/admin/line_customers_screen.dart';
 import 'screens/agent_lines_screen.dart';
-import 'screens/admin/loan_approval_screen.dart';
+// import 'screens/admin/loan_approval_screen.dart'; // Unified into LoanManagement
+import 'screens/admin/loan_management_screen.dart';
 import 'screens/admin/customer_detail_screen.dart';
 import 'screens/admin/reports_screen.dart';
 import 'screens/admin/collection_ledger_screen.dart';
@@ -40,6 +41,7 @@ import 'screens/public_passbook_screen.dart';
 import 'screens/admin/daily_reports_screen.dart';
 import 'screens/admin/live_tracking_screen.dart';
 import 'screens/face_enrollment_screen.dart';
+import 'screens/admin/admin_qr_scan_screen.dart';
 import 'screens/common/upi_payment_screen.dart';
 
 late List<CameraDescription> cameras;
@@ -92,6 +94,7 @@ class VasoolDriveApp extends StatelessWidget {
            }
            return const Scaffold(body: Center(child: Text('Error: Missing arguments details')));
         },
+         '/admin/qr_scan': (context) => const AdminQRScanScreen(),
         '/admin/worker_qr': (context) {
            final args = ModalRoute.of(context)?.settings.arguments;
            if (args is Map<String, dynamic>) {
@@ -146,14 +149,15 @@ class VasoolDriveApp extends StatelessWidget {
         },
         '/agent/lines': (context) => const AgentLinesScreen(),
         '/admin/customers': (context) => const AdminCustomerListScreen(),
-        '/admin/loan_approvals': (context) => const LoanApprovalScreen(),
+        // '/admin/loan_approvals': (context) => const LoanApprovalScreen(), // Removed
+        '/admin/loan_management': (context) => const LoanManagementScreen(),
         '/admin/pending_collections': (context) => const ManagerReviewScreen(),
         '/admin/reports': (context) => ReportsScreen(), 
         '/admin/collection_ledger': (context) => const CollectionLedgerScreen(),
         '/admin/master_settings': (context) => const MasterSettingsScreen(),
         '/admin/risk_prediction': (context) => const RiskPredictionScreen(),
         '/admin/optimization': (context) => const OptimizationDashboard(),
-        '/admin/security': (context) => const SecurityComplianceScreen(),
+        // '/admin/security': (context) => const SecurityComplianceScreen(), // Consolidated
         '/admin/db_viewer': (context) => const DatabaseViewerScreen(),
         '/admin/daily_reports': (context) => const DailyReportsScreen(),
         '/admin/tracking': (context) => const LiveTrackingScreen(),

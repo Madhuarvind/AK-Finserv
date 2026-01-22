@@ -179,6 +179,19 @@ def approve_loan(id):
 def get_loan(id):
     loan = Loan.query.get_or_404(id)
 
+    # Fetch Collections for this loan
+    collections = [
+        {
+            "id": c.id,
+            "amount": c.amount,
+            "payment_mode": c.payment_mode,
+            "status": c.status,
+            "time": c.created_at.isoformat() + "Z" if c.created_at else None,
+            "agent_name": c.agent.name if c.agent else "Unknown"
+        }
+        for c in loan.collections
+    ]
+
     # helper to format schedule
     schedule = [
         {
@@ -197,6 +210,8 @@ def get_loan(id):
                 "id": loan.id,
                 "loan_id": loan.loan_id,
                 "customer_id": loan.customer_id,
+                "customer_name": loan.customer.name if loan.customer else "Unknown",
+                "customer_mobile": loan.customer.mobile_number if loan.customer else "N/A",
                 "principal_amount": loan.principal_amount,
                 "interest_rate": loan.interest_rate,
                 "interest_type": loan.interest_type,
@@ -208,7 +223,14 @@ def get_loan(id):
                 "start_date": (
                     loan.start_date.isoformat() + "Z" if loan.start_date else None
                 ),
+                "guarantor_name": loan.guarantor_name,
+                "guarantor_mobile": loan.guarantor_mobile,
+                "guarantor_relation": loan.guarantor_relation,
+                "assigned_worker_id": loan.assigned_worker_id,
+                "created_by": loan.created_by,
+                "approved_by": loan.approved_by,
                 "emi_schedule": schedule,
+                "collections": collections,
             }
         ),
         200,
@@ -262,11 +284,7 @@ def foreclose_loan(id):
         loan.status = "closed"
         loan.pending_amount = 0
 
-        # 3. Mark all unpaid EMIs as 'closed' (or similar)
-        # For simplicity, we just leave them or mark them paid?
-        # Better to just mark the loan closed. The EMIs are now irrelevant.
-
-        # 4. Audit Log
+        # ... rest of the audit logic ...
         audit = LoanAuditLog(
             loan_id=loan.id,
             action="LOAN_FORECLOSED",
@@ -283,6 +301,51 @@ def foreclose_loan(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": str(e)}), 500
+
+
+@loan_bp.route("/automation/run-overdue-check", methods=["POST"])
+@jwt_required()
+def run_overdue_check():
+    """
+    Automatically marks EMIs as 'overdue' if due_date < now
+    and status is 'pending' or 'partial'.
+    """
+    identity = get_jwt_identity()
+    user = get_user_by_identity(identity)
+
+    if not user:
+        return jsonify({"msg": "Access Denied"}), 403
+
+    try:
+        now = datetime.utcnow()
+        overdue_emis = (
+            EMISchedule.query.filter(
+                EMISchedule.due_date < now,
+                EMISchedule.status.in_(["pending", "partial"]),
+            )
+            .all()
+        )
+
+        updated_count = 0
+        for emi in overdue_emis:
+            emi.status = "overdue"
+            updated_count += 1
+
+        db.session.commit()
+
+        return (
+            jsonify(
+                {
+                    "msg": "Automation completed",
+                    "updated_count": updated_count,
+                    "timestamp": now.isoformat(),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Automation failed", "error": str(e)}), 500
 
 
 @loan_bp.route("/all", methods=["GET"])

@@ -348,10 +348,14 @@ def get_daily_ops_summary():
             hour=23, minute=59, second=59, microsecond=999999
         )
 
-        # 1. Target: Sum of EMIs due today
+        # 1. Target: Sum of pending EMIs due on or before today (Recovery Goal)
+        # We include overdue ones because 'Recovery Pulse' should track everything we need to collect.
         target_today = (
             db.session.query(func.sum(EMISchedule.amount))
-            .filter(func.date(EMISchedule.due_date) == today_start.date())
+            .filter(
+                EMISchedule.status == "pending",
+                func.cast(EMISchedule.due_date, db.Date) <= today_start.date()
+            )
             .scalar()
             or 0
         )

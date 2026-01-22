@@ -730,7 +730,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     final token = await _storage.read(key: 'jwt_token');
     if (token != null) {
       try {
-        final result = await _apiService.approveLoan(loanId, {}, token);
+        final result = await _apiService.approveLoan(loanId, token);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['msg'] ?? 'Loan Approved!'), backgroundColor: Colors.green),

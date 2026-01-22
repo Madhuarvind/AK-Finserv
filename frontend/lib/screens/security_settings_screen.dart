@@ -21,6 +21,11 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   // ignore: unused_field
   bool _isLoading = true;
 
+  // Admin Surveillance Data
+  Map<String, dynamic>? _abuseFlags;
+  Map<String, dynamic>? _tamperAlerts;
+  List<dynamic> _deviceAlerts = [];
+
   @override
   void initState() {
     super.initState();
@@ -29,8 +34,24 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   Future<void> _loadSettings() async {
     final name = await _storage.read(key: 'user_name');
+    final role = await _storage.read(key: 'user_role');
     final bio = await _storage.read(key: 'biometrics_enabled_$name');
     final duty = await _storage.read(key: 'duty_status_$name');
+    final token = await _storage.read(key: 'jwt_token');
+
+    if (token != null && role == 'admin') {
+      final flags = await _apiService.getSecurityFlags(token);
+      final tamper = await _apiService.getTamperDetection(token);
+      final devices = await _apiService.getDeviceMonitoring(token);
+      if (mounted) {
+        setState(() {
+          _abuseFlags = flags;
+          _tamperAlerts = tamper;
+          _deviceAlerts = devices;
+        });
+      }
+    }
+
     if (mounted) {
       setState(() {
         _biometricsEnabled = bio == 'true';
@@ -152,6 +173,30 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                            if (val == true) _loadSettings();
                         })
                       ),
+
+                      if (_tamperAlerts != null || _abuseFlags != null) ...[
+                        const SizedBox(height: 32),
+                        Text(
+                          "ADMIN SURVEILLANCE",
+                          style: GoogleFonts.outfit(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "DATA INTEGRITY & SYSTEM ALERTS",
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            color: Colors.white54,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildTamperCard(),
+                        const SizedBox(height: 16),
+                        _buildAbuseSection(),
+                      ],
                       
                       const SizedBox(height: 32),
 
@@ -256,6 +301,86 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     );
   }
 
+  Widget _buildTamperCard() {
+    final status = _tamperAlerts?['status'] ?? 'secure';
+    final alerts = List<dynamic>.from(_tamperAlerts?['alerts'] ?? []);
+    final isSafe = status == 'secure';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: (isSafe ? Colors.green : Colors.red).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: (isSafe ? Colors.green : Colors.red).withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(isSafe ? Icons.verified_user_rounded : Icons.report_problem_rounded, color: isSafe ? Colors.greenAccent : Colors.redAccent),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(isSafe ? "SYSTEM INTEGRITY VERIFIED" : "TAMPER ALERT DETECTED", 
+                    style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: isSafe ? Colors.greenAccent : Colors.redAccent, fontSize: 13)),
+                  Text("Cross-checked ${_tamperAlerts?['checked_count'] ?? 0} active loans", style: const TextStyle(fontSize: 10, color: Colors.white54)),
+                ],
+              )
+            ],
+          ),
+          if (alerts.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            ...alerts.map((a) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text("• ${a['customer']} (Loan ${a['loan_id']}): ${a['reason']}", style: const TextStyle(fontSize: 11, color: Colors.redAccent)),
+            ))
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAbuseSection() {
+    final flags = List<dynamic>.from(_abuseFlags?['flags'] ?? []);
+    
+    if (flags.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05), 
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: const Center(child: Text("No unusual role activity detected.", style: TextStyle(fontSize: 12, color: Colors.white54))),
+      );
+    }
+    
+    return Column(
+      children: flags.map((f) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.orangeAccent),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("${f['user']} - ${f['type']}", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                  Text(f['warning'], style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                ],
+              ),
+            ),
+            Text("${f['action_count']} acts", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orangeAccent)),
+          ],
+        ),
+      )).toList(),
+    );
+  }
+
   void _showChangePinDialog(BuildContext context) {
     final oldPinCtrl = TextEditingController();
     final newPinCtrl = TextEditingController();
@@ -311,7 +436,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     );
   }
 
-  void _showDeviceManagement(BuildContext context) {
+   void _showDeviceManagement(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E293B),
@@ -324,8 +449,19 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           children: [
             Text("Active Sessions", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 16),
-            _buildDeviceTile("This Device", "Windows 11 • Online", Icons.laptop_windows, true),
-            _buildDeviceTile("Mobile Device", "Android 13 • Last active: 2h ago", Icons.smartphone, false),
+            if (_deviceAlerts.isEmpty) ...[
+               _buildDeviceTile("Current Session", "Active now", Icons.laptop_windows, true),
+               const Padding(
+                 padding: EdgeInsets.symmetric(vertical: 20),
+                 child: Center(child: Text("No other suspicious devices detected.", style: TextStyle(color: Colors.white24))),
+               ),
+            ] else 
+               ..._deviceAlerts.map((d) => _buildDeviceTile(
+                 d['user'] ?? 'Unknown', 
+                 d['risk'] ?? 'High Risk Login', 
+                 Icons.smartphone, 
+                 false
+               )),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

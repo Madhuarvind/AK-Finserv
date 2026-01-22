@@ -380,66 +380,15 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     children: [
-                      _buildModernActionTile(context, context.translate('qr_scan'), Icons.qr_code_scanner_rounded, '', isCustom: true, onTap: () async {
-                         final result = await Navigator.push(
-                           context,
-                           MaterialPageRoute(builder: (context) => const QRScanScreen()),
-                         );
-                         if (result != null) {
-                            if (!context.mounted) return;
-                            
-                            final resStr = result.toString().trim();
-                            // Detect Digital Passbook (Unified ID or UUID)
-                            final uuidRegex = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false);
-                            
-                            if (uuidRegex.hasMatch(resStr) || resStr.startsWith('CUST-')) {
-                               Navigator.pushNamed(context, '/public/passbook', arguments: resStr);
-                               return;
-                            }
-                            
-                            // Show processing for regular customer QR
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Identifying Customer...")));
-                            
-                            final customerData = await _apiService.getCustomerByQr(resStr);
-                            
-                            if (!context.mounted) return;
-                            
-                            if (customerData['msg'] == 'not_found' || customerData['id'] == null) {
-                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Customer not found!"), backgroundColor: Colors.red));
-                            } else {
-                               // Navigate to Customer Details
-                               Navigator.pushNamed(context, '/admin/customer_detail', arguments: customerData['id']);
-                            }
-                         }
-                      }),
+                      _buildModernActionTile(context, context.translate('qr_scan'), Icons.qr_code_scanner_rounded, '/admin/qr_scan'),
                       const SizedBox(width: 16),
-                      _buildModernActionTile(context, context.translate('user_management'), Icons.manage_accounts_outlined, '/admin/user_management'),
-                      const SizedBox(width: 16),
-                      _buildModernActionTile(context, "Reports", Icons.bar_chart_rounded, '/admin/reports'),
-                      const SizedBox(width: 16),
-                      _buildModernActionTile(context, "Manage Lines", Icons.route_rounded, '/admin/lines'),
-                      const SizedBox(width: 16),
-                      _buildModernActionTile(context, "AI Risk", Icons.psychology_outlined, '/admin/risk_prediction'),
-                      const SizedBox(width: 16),
-                      _buildModernActionTile(context, "Operations", Icons.bolt_rounded, '/admin/optimization'),
-                       const SizedBox(width: 16),
-                       _buildModernActionTile(context, "Worker AI", Icons.analytics_outlined, '/admin/analytics'),
-                       const SizedBox(width: 16),
-                       _buildModernActionTile(context, "Live Tracking", Icons.map_rounded, '/admin/tracking'),
-                       const SizedBox(width: 16),
-                       _buildModernActionTile(context, context.translate('manage_customers'), Icons.people_outline, '/admin/customers'),
-                      const SizedBox(width: 16),
-                      _buildModernActionTile(context, context.translate('audit_logs'), Icons.assignment_outlined, '/admin/audit_logs'),
-                      const SizedBox(width: 16),
-                       _buildModernActionTile(context, "Security", Icons.gpp_good_outlined, '/admin/security'),
-                       const SizedBox(width: 16),
-                       _buildModernActionTile(context, "Loan Approvals", Icons.fact_check_outlined, '/admin/loan_approvals'),
+                      _buildModernActionTile(context, "Loan Management", Icons.monetization_on_rounded, '/admin/loan_management'),
                       const SizedBox(width: 16),
                       _buildModernActionTile(context, "Review Collections", Icons.fact_check_rounded, '/admin/review'),
                       const SizedBox(width: 16),
-                      _buildModernActionTile(context, "DB Viewer", Icons.storage_rounded, '/admin/db_viewer'),
+                      _buildModernActionTile(context, "Live Tracking", Icons.map_rounded, '/admin/tracking'),
                       const SizedBox(width: 16),
-                      _buildModernActionTile(context, context.translate('settings'), Icons.settings_outlined, '/settings'),
+                      _buildModernActionTile(context, "Operations", Icons.bolt_rounded, '/admin/optimization'),
                     ],
                   ),
                 ),

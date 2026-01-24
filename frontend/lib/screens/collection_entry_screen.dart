@@ -6,6 +6,7 @@ import '../services/local_db_service.dart';
 
 import '../utils/localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/services.dart';
 
@@ -230,7 +231,7 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
-                  child: Text("DONE", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, letterSpacing: 2)),
+                  child: Text(context.translate('done').toUpperCase(), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, letterSpacing: 2)),
                 ),
               ),
             ),
@@ -248,31 +249,31 @@ class _CollectionEntryScreenState extends State<CollectionEntryScreen> {
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.orange),
             const SizedBox(width: 10),
-            Text("AI Security Warning", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+            Text(context.translate('ai_security_warning'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("This collection has been flagged for Admin review due to:"),
+            Text(context.translate('flagged_for_review')),
             const SizedBox(height: 12),
             ...warnings.map((w) => Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: Text("• $w", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 13)),
             )),
             const SizedBox(height: 12),
-            const Text("You can continue, but the payment won't reflect until verified by the office.", style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(context.translate('payment_verification_notice'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK")),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.translate('ok'))),
           ElevatedButton(
             onPressed: () {
                Navigator.pop(context); // Close dialog
                Navigator.pop(context, true); // Go back
             },
-            child: const Text("I UNDERSTAND"),
+            child: Text(context.translate('i_understand')),
           )
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import '../main.dart'; 
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/theme.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -34,7 +35,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
 
   void _startCamera() {
     if (cameras.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No cameras found")));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('no_cameras_found'))));
       return;
     }
 
@@ -125,7 +126,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
         final msg = result['msg']?.toString().toLowerCase() ?? '';
         if (msg.contains('success') || msg.contains('registered')) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Biometric enrolled successfully!")));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('biometric_enrolled_success'))));
           await Future.delayed(const Duration(seconds: 1));
           if (!mounted) return;
           Navigator.pop(context, true);
@@ -154,7 +155,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white), onPressed: () => Navigator.pop(context)),
-        title: Text("Enroll Biometrics", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(context.translate('enroll_biometrics'), style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -171,9 +172,9 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text("Facial Recognition", textAlign: TextAlign.center, style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(context.translate('facial_recognition_title'), textAlign: TextAlign.center, style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 8),
-                  Text("Position your face in the circle to enroll.", textAlign: TextAlign.center, style: GoogleFonts.outfit(color: Colors.white54)),
+                  Text(context.translate('facial_recognition_instruction'), textAlign: TextAlign.center, style: GoogleFonts.outfit(color: Colors.white54)),
                   const SizedBox(height: 40),
                   Center(
                     child: Container(
@@ -200,13 +201,14 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                                   } else if (snapshot.hasError) {
                                     return const Center(child: Text("Camera Error", style: TextStyle(color: Colors.red)));
                                   } else {
-                                    return const Center(
+                                    return SizedBox(
+                                      height: 300,
                                       child: Column(
-                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           CircularProgressIndicator(color: AppTheme.primaryColor),
                                           SizedBox(height: 10),
-                                          Text("Starting Camera...", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                          Text(context.translate('starting_camera'), style: TextStyle(color: Colors.white54, fontSize: 12)),
                                         ],
                                       ),
                                     );
@@ -221,7 +223,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                     ElevatedButton.icon(
                       onPressed: _takePhoto,
                       icon: const Icon(Icons.camera_alt_rounded),
-                      label: Text("CAPTURE PHOTO", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+                      label: Text(context.translate('capture_photo'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.black,
@@ -247,7 +249,7 @@ class _FaceEnrollmentScreenState extends State<FaceEnrollmentScreen> {
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: () => setState(() => _imageFile = null), 
-                          child: Text("RETAKE PHOTO", style: GoogleFonts.outfit(color: Colors.white70, fontWeight: FontWeight.bold))
+                          child: Text(context.translate('retake_photo'), style: GoogleFonts.outfit(color: Colors.white70, fontWeight: FontWeight.bold))
                         ),
                       ],
                     ),

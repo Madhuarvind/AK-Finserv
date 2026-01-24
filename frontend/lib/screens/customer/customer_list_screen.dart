@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../utils/localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../utils/theme.dart';
 import '../../services/local_db_service.dart';
@@ -242,7 +243,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                         } else {
                            // Fallback for local-only? Currently detail screen expects ID.
                            ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Sync required to view full profile"))
+                            SnackBar(content: Text(context.translate('sync_required_profile')))
                           );
                         }
                       },
@@ -298,7 +299,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            label: Text("Refresh List", style: GoogleFonts.outfit(color: Colors.white)),
+            label: Text(context.translate('refresh_list'), style: GoogleFonts.outfit(color: Colors.white)),
           )
         ],
       ),

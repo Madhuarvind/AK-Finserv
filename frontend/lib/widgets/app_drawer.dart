@@ -112,7 +112,7 @@ class AppDrawer extends StatelessWidget {
                     _buildDrawerItem(
                       context,
                       icon: Icons.monetization_on_outlined,
-                      label: "Loan Management",
+                      label: context.translate('loan_management'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/admin/loan_management');
@@ -148,7 +148,7 @@ class AppDrawer extends StatelessWidget {
                     _buildDrawerItem(
                       context,
                       icon: Icons.map_rounded,
-                      label: "Live Tracking",
+                      label: context.translate('live_tracking'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/admin/tracking');
@@ -157,7 +157,7 @@ class AppDrawer extends StatelessWidget {
                     _buildDrawerItem(
                       context,
                       icon: Icons.bolt_rounded,
-                      label: "Operations",
+                      label: context.translate('operations'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/admin/optimization');
@@ -184,7 +184,7 @@ class AppDrawer extends StatelessWidget {
                     _buildDrawerItem(
                       context,
                       icon: Icons.assessment_outlined,
-                      label: "Reports",
+                      label: context.translate('reports'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/admin/reports');
@@ -193,7 +193,7 @@ class AppDrawer extends StatelessWidget {
                     _buildDrawerItem(
                       context,
                       icon: Icons.history_rounded,
-                      label: "Daily Reports",
+                      label: context.translate('daily_report'),
                       onTap: () {
                         Navigator.pop(context);
                         Navigator.pushNamed(context, '/admin/daily_reports');

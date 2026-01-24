@@ -4,6 +4,7 @@ import '../utils/theme.dart';
 import '../utils/localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'line_report_screen.dart';
 import '../widgets/add_customer_dialog.dart';
 
@@ -263,7 +264,7 @@ class _LineCustomersSheetState extends State<_LineCustomersSheet> {
                       Text(widget.line['name'] ?? 'Unknown', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5)),
                       const SizedBox(height: 4),
                       _isLoading 
-                        ? const Text("Loading...", style: TextStyle(fontSize: 12, color: Colors.white24))
+                        ? Text(context.translate('loading'), style: const TextStyle(fontSize: 12, color: Colors.white24))
                         : Row(
                             children: [
                               Text(
@@ -289,7 +290,7 @@ class _LineCustomersSheetState extends State<_LineCustomersSheet> {
                 TextButton.icon(
                   onPressed: _optimizeRoute, 
                   icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF6366F1)),
-                  label: Text("AI", style: GoogleFonts.outfit(color: const Color(0xFF6366F1), fontWeight: FontWeight.w900, fontSize: 11)),
+                  label: Text(context.translate('ai_label'), style: GoogleFonts.outfit(color: const Color(0xFF6366F1), fontWeight: FontWeight.w900, fontSize: 11)),
                   style: TextButton.styleFrom(
                     backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.1), 
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -313,7 +314,7 @@ class _LineCustomersSheetState extends State<_LineCustomersSheet> {
                 TextButton.icon(
                   onPressed: _addCustomer,
                   icon: const Icon(Icons.person_add_rounded, size: 18, color: Colors.blue),
-                  label: const Text("Add Customer", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
+                  label: Text(context.translate('add_customer_label'), style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 11)),
                   style: TextButton.styleFrom(
                     backgroundColor: Colors.blue.withValues(alpha: 0.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -439,7 +440,7 @@ class _LineCustomersSheetState extends State<_LineCustomersSheet> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     margin: const EdgeInsets.only(left: 8),
                     decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Text("${cust['loan_count']} LOANS", style: GoogleFonts.outfit(fontSize: 9, color: Colors.blue, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    child: Text("${cust['loan_count']} ${context.translate('loans_count')}", style: GoogleFonts.outfit(fontSize: 9, color: Colors.blue, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                   ),
               ],
             ),

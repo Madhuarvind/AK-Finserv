@@ -127,11 +127,11 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Notifications", style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text(context.translate('notifications'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: double.maxFinite,
           child: _recentActivity.isEmpty 
-              ? const Text("No new notifications")
+              ? Text(context.translate('no_notifications'))
               : ListView.builder(
                   shrinkWrap: true,
                   itemCount: _recentActivity.take(5).length,
@@ -139,7 +139,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     final log = _recentActivity[index];
                     return ListTile(
                       leading: const Icon(Icons.notifications_active_outlined, color: AppTheme.primaryColor),
-                      title: Text(log['status'] ?? 'System Event', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      title: Text(log['status'] ?? context.translate('system_event'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       subtitle: Text(log['time'] ?? '', style: const TextStyle(fontSize: 12)),
                     );
                   },
@@ -199,7 +199,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             onPressed: () => _showAIAnalyst(context),
             backgroundColor: AppTheme.primaryColor,
             icon: const Icon(Icons.auto_awesome, color: Colors.white),
-            label: Text("Ask AI", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: Text(context.translate('ask_ai'), style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
           ) : null,
         );
       },
@@ -382,13 +382,13 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     children: [
                       _buildModernActionTile(context, context.translate('qr_scan'), Icons.qr_code_scanner_rounded, '/admin/qr_scan'),
                       const SizedBox(width: 16),
-                      _buildModernActionTile(context, "Loan Management", Icons.monetization_on_rounded, '/admin/loan_management'),
+                      _buildModernActionTile(context, context.translate('loan_management'), Icons.monetization_on_rounded, '/admin/loan_management'),
                       const SizedBox(width: 16),
-                      _buildModernActionTile(context, "Review Collections", Icons.fact_check_rounded, '/admin/review'),
+                      _buildModernActionTile(context, context.translate('review_collections'), Icons.fact_check_rounded, '/admin/review'),
                       const SizedBox(width: 16),
-                      _buildModernActionTile(context, "Live Tracking", Icons.map_rounded, '/admin/tracking'),
+                      _buildModernActionTile(context, context.translate('live_tracking'), Icons.map_rounded, '/admin/tracking'),
                       const SizedBox(width: 16),
-                      _buildModernActionTile(context, "Operations", Icons.bolt_rounded, '/admin/optimization'),
+                      _buildModernActionTile(context, context.translate('operations'), Icons.bolt_rounded, '/admin/optimization'),
                     ],
                   ),
                 ),
@@ -405,7 +405,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                       InkWell(
                         onTap: () => Navigator.pushNamed(context, '/admin/audit_logs'),
                         child: Text(
-                          'View All',
+                          context.translate('view_all'),
                           style: GoogleFonts.outfit(color: AppTheme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),
@@ -443,11 +443,11 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                         child: Icon(icon, color: color),
                       ),
                       title: Text(
-                        log['status'] ?? 'Event',
+                        log['status'] ?? context.translate('event'),
                         style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
                       ),
                       subtitle: Text(
-                        "${log['user_name']} - ${log['device'] ?? 'Unknown Device'}",
+                        "${log['user_name']} - ${log['device'] ?? context.translate('unknown_device')}",
                         style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

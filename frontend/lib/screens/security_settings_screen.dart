@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
-import '../utils/localizations.dart';
+
 import '../utils/theme.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
@@ -324,7 +325,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 children: [
                   Text(isSafe ? "SYSTEM INTEGRITY VERIFIED" : "TAMPER ALERT DETECTED", 
                     style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: isSafe ? Colors.greenAccent : Colors.redAccent, fontSize: 13)),
-                  Text("Cross-checked ${_tamperAlerts?['checked_count'] ?? 0} active loans", style: const TextStyle(fontSize: 10, color: Colors.white54)),
+                  Text("${context.translate('cross_checked_loans')} ${_tamperAlerts?['checked_count'] ?? 0}", style: const TextStyle(fontSize: 10, color: Colors.white54)),
                 ],
               )
             ],
@@ -352,7 +353,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
-        child: const Center(child: Text("No unusual role activity detected.", style: TextStyle(fontSize: 12, color: Colors.white54))),
+        child: Center(child: Text(context.translate('no_unusual_role_activity'), style: const TextStyle(fontSize: 12, color: Colors.white54))),
       );
     }
     
@@ -390,7 +391,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text("Change PIN", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(context.translate('change_pin'), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -402,7 +403,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("CANCEL", style: TextStyle(color: Colors.white54))),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.translate('cancel').toUpperCase(), style: const TextStyle(color: Colors.white54))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.black),
             onPressed: () async {
@@ -447,13 +448,13 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Active Sessions", style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(context.translate('active_sessions'), style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 16),
             if (_deviceAlerts.isEmpty) ...[
                _buildDeviceTile("Current Session", "Active now", Icons.laptop_windows, true),
-               const Padding(
+               Padding(
                  padding: EdgeInsets.symmetric(vertical: 20),
-                 child: Center(child: Text("No other suspicious devices detected.", style: TextStyle(color: Colors.white24))),
+                 child: Center(child: Text(context.translate('no_suspicious_devices'), style: const TextStyle(color: Colors.white24))),
                ),
             ] else 
                ..._deviceAlerts.map((d) => _buildDeviceTile(

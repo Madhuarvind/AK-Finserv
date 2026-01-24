@@ -5,6 +5,7 @@ import '../../utils/localizations.dart';
 import 'package:provider/provider.dart';
 import '../../services/language_service.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../widgets/app_drawer.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/api_service.dart';
@@ -384,14 +385,14 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                                        }
                                       
                                        // Show processing for regular customer QR
-                                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Identifying Customer...")));
+                                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('identifying_customer'))));
                                        
                                        final customerData = await _apiService.getCustomerByQr(resStr);
                                       
                                       if (!context.mounted) return;
                                       
                                        if (customerData['msg'] == 'not_found' || customerData['id'] == null) {
-                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Customer not found!"), backgroundColor: Colors.red));
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('customer_not_found')), backgroundColor: Colors.red));
                                        } else if (customerData['id'] != null) {
                                          // Navigate to Collection Entry for this customer
                                          Navigator.pushNamed(
@@ -404,7 +405,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                                            }
                                          );
                                       } else {
-                                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Error reading QR"), backgroundColor: Colors.red));
+                                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.translate('error_reading_qr')), backgroundColor: Colors.red));
                                       }
                                    }
                                 }),

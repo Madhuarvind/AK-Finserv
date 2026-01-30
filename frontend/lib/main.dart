@@ -115,7 +115,10 @@ class VasoolDriveApp extends StatelessWidget {
            }
            return const Scaffold(body: Center(child: Text('Error: Missing user ID')));
         },
-        '/settings': (context) => const SettingsScreen(),
+        '/settings': (context) {
+           final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+           return SettingsScreen(isPublic: args?['isPublic'] ?? false);
+        },
         '/home': (context) => const WorkerDashboard(),
         '/profile': (context) => const ProfileScreen(),
         '/security': (context) => const SecuritySettingsScreen(),

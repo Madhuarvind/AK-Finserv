@@ -8,6 +8,7 @@ import 'add_loan_screen.dart';
 import 'emi_schedule_screen.dart';
 import 'loan_documents_screen.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../customer_id_card_screen.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final int customerId;
@@ -72,6 +73,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white70),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.badge_outlined),
+            tooltip: 'View ID Card',
+            onPressed: () => _viewIdCard(),
+          ),
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             onPressed: () async {
@@ -769,6 +775,15 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       context,
       MaterialPageRoute(builder: (_) => LoanDocumentsScreen(loanId: loanId, loanNumber: loanNumber)),
     );
+  }
+
+  void _viewIdCard() {
+    if (_customer != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => CustomerIdCardScreen(customer: _customer!)),
+      );
+    }
   }
 
   Future<void> _activateLoan(int loanId) async {

@@ -331,7 +331,13 @@ class _WorkerLoginScreenState extends State<WorkerLoginScreen> {
       ),
       child: IconButton(
         icon: Icon(icon, color: Colors.white70, size: 20),
-        onPressed: () => Navigator.pushNamed(context, route),
+        onPressed: () {
+          if (route == '/settings') {
+            Navigator.pushNamed(context, route, arguments: {'isPublic': true});
+          } else {
+             Navigator.pushNamed(context, route);
+          }
+        },
       ),
     );
   }

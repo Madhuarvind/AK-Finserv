@@ -9,6 +9,7 @@ from models import (
     CustomerNote,
     Loan,
     PassbookToken,
+    Collection,
 )
 from datetime import datetime, timedelta
 import uuid
@@ -763,11 +764,43 @@ def get_public_passbook(token):
     }
 
     if active_loan:
+        collections = (
+            Collection.query.filter_by(loan_id=active_loan.id)
+            .order_by(Collection.collected_at.desc())
+            .all()
+        )
+        total_paid = sum(float(c.amount_collected) for c in collections)
+        days_paid = len(collections)
+        
+        missed_days = 0
+        if active_loan.start_date:
+            start_date = active_loan.start_date
+            if hasattr(start_date, 'date'):
+                start_date = start_date.date()
+                
+            days_elapsed = (datetime.utcnow().date() - start_date).days
+            if days_elapsed > 0:
+                missed_days = max(0, days_elapsed - days_paid)
+
+        tx_history = [
+            {
+                "date": c.collected_at.strftime("%d %b %Y"),
+                "amount": float(c.amount_collected),
+                "type": "EMI"
+            }
+            for c in collections 
+        ]
+
         summary["active_loan"] = {
             "loan_id": active_loan.loan_id,
             "principal": float(active_loan.principal_amount),
             "pending": float(active_loan.pending_amount),
+            "calculated_pending": float(active_loan.principal_amount) - total_paid,
             "tenure": f"{active_loan.tenure} {active_loan.tenure_unit}",
+            "total_paid": total_paid,
+            "days_paid": days_paid,
+            "missed_days": missed_days,
+            "transactions": tx_history
         }
 
     return jsonify(summary), 200

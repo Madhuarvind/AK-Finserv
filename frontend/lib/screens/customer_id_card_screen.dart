@@ -31,62 +31,128 @@ class CustomerIdCardScreen extends StatelessWidget {
           pageFormat: cardFormat,
           build: (pw.Context context) {
             return pw.Container(
-              padding: const pw.EdgeInsets.all(12),
               decoration: const pw.BoxDecoration(
-                color: PdfColors.green700,
+                gradient: pw.LinearGradient(
+                  colors: [PdfColors.blue900, PdfColors.green700], // Approximate AppTheme.primaryColor to Green
+                  begin: pw.Alignment.topLeft,
+                  end: pw.Alignment.bottomRight,
+                ),
+                borderRadius: pw.BorderRadius.all(pw.Radius.circular(20)),
               ),
-              child: pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
+              child: pw.Stack(
                 children: [
-                   pw.Expanded(
-                     child: pw.Column(
-                       crossAxisAlignment: pw.CrossAxisAlignment.start,
-                       children: [
-                         pw.Image(logo, width: 80),
-                         pw.SizedBox(height: 4),
-                         pw.Text(
-                           customer['name']?.toString().toUpperCase() ?? 'N/A',
-                           style: pw.TextStyle(
-                             color: PdfColors.white,
-                             fontSize: 12,
-                             fontWeight: pw.FontWeight.bold,
-                           ),
-                           maxLines: 1,
-                         ),
-                         pw.Spacer(),
-                         pw.Text(
-                           'ID: ${customer['customer_id'] ?? 'N/A'}',
-                           style: pw.TextStyle(color: PdfColors.white, fontSize: 8),
-                         ),
-                         pw.Text(
-                           'MOB: ${customer['mobile'] ?? 'N/A'}',
-                           style: pw.TextStyle(color: PdfColors.white, fontSize: 8),
-                         ),
-                         pw.Text(
-                           'AREA: ${customer['area'] ?? 'N/A'}',
-                           style: pw.TextStyle(color: PdfColors.white, fontSize: 8),
-                         ),
-                       ],
-                     ),
-                   ),
-                   pw.SizedBox(width: 8),
-                   pw.Column(
-                     mainAxisAlignment: pw.MainAxisAlignment.center,
-                     children: [
-                        pw.Container(
-                          padding: const pw.EdgeInsets.all(3),
+                  // Background Circles (Simulated opacity)
+                   pw.Positioned(
+                    right: -30,
+                    top: -30,
+                    child: pw.Opacity(
+                      opacity: 0.1,
+                      child: pw.Container(
+                        width: 150,
+                        height: 150,
+                        decoration: const pw.BoxDecoration(
                           color: PdfColors.white,
-                          child: pw.BarcodeWidget(
-                            barcode: pw.Barcode.qrCode(),
-                            data: customer['customer_id'] ?? '',
-                            width: 50,
-                            height: 50,
-                          ),
+                          shape: pw.BoxShape.circle,
                         ),
-                        pw.SizedBox(height: 4),
-                        pw.Text('PASSBOOK QR', style: const pw.TextStyle(color: PdfColors.white, fontSize: 5)),
-                     ],
-                   ),
+                      ),
+                    ),
+                  ),
+                  pw.Positioned(
+                    left: -50,
+                    bottom: -50,
+                    child: pw.Opacity(
+                      opacity: 0.1,
+                      child: pw.Container(
+                        width: 120,
+                        height: 120,
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.white,
+                          shape: pw.BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Main Content
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(12),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        // Header: Company Name & Logo
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                          children: [
+                             pw.Text('AK FINSERV', 
+                               style: pw.TextStyle(
+                                 color: PdfColors.white, 
+                                 fontSize: 16, // Reduced from 18
+                                 fontWeight: pw.FontWeight.bold,
+                                 letterSpacing: 1.5
+                               )
+                             ),
+                             pw.Container(
+                               padding: const pw.EdgeInsets.all(4),
+                               decoration: const pw.BoxDecoration(
+                                 color: PdfColors.white,
+                                 shape: pw.BoxShape.circle,
+                               ),
+                               child: pw.ClipOval(
+                                 child: pw.Image(logo, width: 32, height: 32, fit: pw.BoxFit.cover), // Reduced from 40
+                               ),
+                             ),
+                          ],
+                        ),
+                        
+                        pw.Spacer(),
+                        
+                        // Footer: Customer Details & QR
+                        pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.end,
+                          children: [
+                            pw.Expanded(
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                children: [
+                                  pw.Text(
+                                    customer['name']?.toString().toUpperCase() ?? 'N/A',
+                                    style: pw.TextStyle(
+                                      color: PdfColors.white,
+                                      fontSize: 14, // Reduced from 18
+                                      fontWeight: pw.FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                  pw.SizedBox(height: 4),
+                                  pw.Text(
+                                    'ID: ${customer['customer_id'] ?? 'N/A'}',
+                                    style: pw.TextStyle(color: PdfColors.white, fontSize: 10, fontWeight: pw.FontWeight.bold),
+                                  ),
+                                  pw.Text(
+                                    'MOB: ${customer['mobile'] ?? 'N/A'}',
+                                    style: pw.TextStyle(color: PdfColors.white, fontSize: 9),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.all(4),
+                              decoration: const pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.all(pw.Radius.circular(6)),
+                              ),
+                              child: pw.BarcodeWidget(
+                                barcode: pw.Barcode.qrCode(),
+                                data: customer['customer_id'] ?? '',
+                                width: 45, // Reduced from 50
+                                height: 45,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );
@@ -248,7 +314,7 @@ class CustomerIdCardScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'ARUN FINANCE',
+                      'AK FINSERV',
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontSize: 20,
@@ -257,17 +323,18 @@ class CustomerIdCardScreen extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(12),
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
                       ),
-                      child: Text(
-                        'CUSTOMER',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/logo.png',
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.account_balance_wallet, color: AppTheme.primaryColor, size: 30),
                         ),
                       ),
                     ),

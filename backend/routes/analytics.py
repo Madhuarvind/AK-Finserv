@@ -447,9 +447,10 @@ def _calculate_customer_stats(customer, loans):
     avg_delay = sum(delays) / len(delays) if delays else 0
 
     # Volatility (Std Dev of delays)
-    import numpy as np
-
-    volatility = np.std(delays) if len(delays) > 1 else 0
+    volatility = 0
+    if len(delays) > 1:
+        import numpy as np
+        volatility = np.std(delays)
 
     avg_capacity = (
         sum(payment_amounts) / len(payment_amounts) if payment_amounts else 5000

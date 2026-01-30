@@ -7,7 +7,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/theme.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool isPublic;
+  const SettingsScreen({super.key, this.isPublic = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -102,7 +103,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 
                 const SizedBox(height: 16),
 
-                if (_role != null) ...[
+                const SizedBox(height: 16),
+
+                if (!widget.isPublic && _role != null) ...[
                   const SizedBox(height: 32),
                   Text(
                     "ACCOUNT & SECURITY",
@@ -124,7 +127,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
                 
-                if (_role == 'admin') ...[
+                if (!widget.isPublic && _role == 'admin') ...[
                   const SizedBox(height: 16),
                   _buildActionCard(
                     context,

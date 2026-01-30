@@ -222,9 +222,60 @@ class _PublicPassbookScreenState extends State<PublicPassbookScreen> {
           const Divider(height: 32, color: Colors.white10),
           _buildDetailRow("Loan Amount", "₹${loan['principal']}", isBold: true, valueColor: Colors.white),
           const SizedBox(height: 16),
-          _buildDetailRow("Pending Balance", "₹${loan['pending']}", valueColor: Colors.redAccent, isBold: true, valueSize: 20),
+          // Use calculated pending if available
+          _buildDetailRow("Pending Balance", "₹${loan['calculated_pending'] ?? loan['pending']}", valueColor: Colors.redAccent, isBold: true, valueSize: 20),
+          const SizedBox(height: 16),
+          _buildDetailRow("Total Paid", "₹${loan['total_paid'] ?? 0}", valueColor: Colors.greenAccent, isBold: true),
           const SizedBox(height: 16),
           _buildDetailRow("Tenure", loan['tenure'] ?? 'N/A'),
+          
+          const Divider(height: 32, color: Colors.white10),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStatBox("Paid Days", "${loan['days_paid'] ?? 0}", Colors.green),
+              _buildStatBox("Missed", "${loan['missed_days'] ?? 0}", Colors.red),
+            ],
+          ),
+
+          if (loan['transactions'] != null && (loan['transactions'] as List).isNotEmpty) ...[
+             const SizedBox(height: 32),
+             Align(
+               alignment: Alignment.centerLeft,
+               child: Text("RECENT TRANSACTIONS", style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+             ),
+             const SizedBox(height: 16),
+             ListView.builder(
+               shrinkWrap: true,
+               physics: const NeverScrollableScrollPhysics(),
+               itemCount: (loan['transactions'] as List).length,
+               itemBuilder: (context, index) {
+                 final tx = loan['transactions'][index];
+                 return Container(
+                   margin: const EdgeInsets.only(bottom: 12),
+                   padding: const EdgeInsets.all(16),
+                   decoration: BoxDecoration(
+                     color: Colors.white.withOpacity(0.05),
+                     borderRadius: BorderRadius.circular(12),
+                   ),
+                   child: Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                     children: [
+                       Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           Text(tx['date'], style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+                           Text(tx['type'] ?? 'EMI', style: GoogleFonts.outfit(color: Colors.white54, fontSize: 12)),
+                         ],
+                       ),
+                       Text("₹${tx['amount']}", style: GoogleFonts.outfit(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                     ],
+                   ),
+                 );
+               },
+             ),
+          ],
         ],
       ),
     );
@@ -244,6 +295,24 @@ class _PublicPassbookScreenState extends State<PublicPassbookScreen> {
           )
         ),
       ],
+    );
+  }
+
+  Widget _buildStatBox(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(value, style: GoogleFonts.outfit(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(label, style: GoogleFonts.outfit(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
     );
   }
 }

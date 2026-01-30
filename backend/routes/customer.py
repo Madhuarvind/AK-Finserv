@@ -740,8 +740,14 @@ def generate_passbook_token(id):
 @customer_bp.route("/public/passbook/<string:token>", methods=["GET"])
 def get_public_passbook(token):
     """Serve public passbook summary using permanent customer_id or temporary token"""
+    token = token.strip()
+    
     # 1. Try permanent customer_id (Unified QR support)
     customer = Customer.query.filter_by(customer_id=token).first()
+    
+    # 2. Try Mobile Number
+    if not customer:
+        customer = Customer.query.filter_by(mobile_number=token).first()
 
     # 2. Try temporary token if not found
     if not customer:
